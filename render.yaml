@@ -3,7 +3,7 @@ services:
     name: capital-management
     env: node
     plan: free
-    buildCommand: npm run init-db
+    buildCommand: npm install && npm run init-db
     startCommand: npm start
     envVars:
       - key: NODE_ENV
