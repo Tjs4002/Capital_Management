@@ -100,6 +100,15 @@
         <a href="capitalmaster.html"><div class="nav-icon"><i class="fa-solid fa-building-columns"></i></div>Capital Master<span class="nav-badge" id="capCount"></span></a>
     </div>
     <div class="nav-item">
+        <a href="financemanager.html"><div class="nav-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>Finance Manager</a>
+    </div>
+    <div class="nav-item">
+        <a href="cfo.html"><div class="nav-icon"><i class="fa-solid fa-crown"></i></div>CFO</a>
+    </div>
+    <div class="nav-item">
+        <a href="md.html"><div class="nav-icon"><i class="fa-solid fa-gem"></i></div>MD</a>
+    </div>
+    <div class="nav-item">
         <a href="list.html"><div class="nav-icon"><i class="fa-solid fa-list"></i></div>Records List</a>
     </div>
     <div class="nav-item">
@@ -188,13 +197,6 @@
             <div class="stat-label">capital Requests</div>
         </div>
 
-        <div class="stat-card emerald">
-            <div class="stat-change up">Active</div>
-            <div class="stat-icon ic-emerald"><i class="fa-solid fa-check-circle"></i></div>
-            <div class="stat-num" id="statActive">0</div>
-            <div class="stat-label">Active Records</div>
-        </div>
-
     </div>
 
     <!-- NOTIFICATIONS SECTION -->
@@ -207,8 +209,7 @@
             <div style="display:flex;align-items:center;gap:10px;">
                 <span id="unreadNotifCount" style="background:#ef4444;color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;"></span>
             </div>
-        </div>
-        
+        </div>  
         <!-- Two Column Layout -->
         <div style="display:flex; gap:16px; padding:16px;">
             <!-- Capital Request Notifications -->
@@ -426,6 +427,54 @@
     </div>
 </div>
 
+<!-- REQUEST DETAILS MODAL -->
+<div class="modal-overlay" id="requestDetailsModal">
+    <div class="modal-box" style="max-height:600px;overflow-y:auto;">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-file-text"></i></div><div><h3>Request Details</h3><p>Full information about this capital request</p></div></div>
+        <div class="modal-body">
+            <div style="display:grid;gap:16px;">
+                <div style="background:var(--card);padding:14px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;">REQUEST ID</strong><br><span id="detailRequestId" style="color:var(--navy);font-weight:600;font-size:14px;">—</span></div>
+                    <div style="margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;">ASSET NAME</strong><br><span id="detailAssetName" style="color:var(--text);font-size:14px;">—</span></div>
+                    <div style="margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;">CAPITAL TYPE</strong><br><span id="detailCapitalType" style="color:var(--text);font-size:14px;">—</span></div>
+                    <div style="margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;">REQUESTER</strong><br><span id="detailRequester" style="color:var(--text);font-size:14px;">—</span></div>
+                </div>
+                
+                <div style="background:var(--card);padding:14px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;">REQUESTED AMOUNT</strong><br><span id="detailRequestAmount" style="color:#0369a1;font-weight:600;font-size:14px;">—</span></div>
+                    <div style="margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;">ALLOCATED FUND</strong><br><span id="detailAllocatedFund" style="color:#059669;font-weight:600;font-size:14px;">—</span></div>
+                    <div style="margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;">REQUEST DATE</strong><br><span id="detailRequestDate" style="color:var(--text);font-size:14px;">—</span></div>
+                    <div><strong style="color:var(--muted);font-size:11px;">STATUS</strong><br><span id="detailStatus" style="font-size:14px;">—</span></div>
+                </div>
+                
+                <div id="detailRemarksSection" style="display:none;background:#fef3c7;padding:14px;border-radius:10px;border:1px solid #fcd34d;">
+                    <div style="margin-bottom:8px;"><strong style="color:#92400e;font-size:11px;">CAPITAL MASTER REMARKS</strong></div>
+                    <div id="detailRemarks" style="color:#92400e;font-size:13px;white-space:pre-wrap;">—</div>
+                </div>
+                
+                <div id="detailDenialSection" style="display:none;background:#fee2e2;padding:14px;border-radius:10px;border:1px solid #fca5a5;">
+                    <div style="margin-bottom:8px;"><strong style="color:#991b1b;font-size:11px;">DENIAL REASON</strong></div>
+                    <div id="detailDenialReason" style="color:#991b1b;font-size:13px;white-space:pre-wrap;">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-primary" onclick="closeModal('requestDetailsModal')">Close</button></div>
+    </div>
+</div>
+
+<!-- NOTIFICATION REASON MODAL -->
+<div class="modal-overlay" id="notificationReasonModal">
+    <div class="modal-box" style="max-width:500px;">
+        <div class="modal-head"><div class="modal-head-icon" id="notifIconHeader" style="background:#fef3c7;color:#f59e0b;"><i class="fa-solid fa-bell"></i></div><div><h3 id="notifTitle">Notification</h3><p id="notifSubtitle">Capital Master Decision</p></div></div>
+        <div class="modal-body">
+            <div id="notifReasonBox" style="background:#fef3c7;padding:20px;border-radius:10px;border-left:4px solid #f59e0b;text-align:center;">
+                <div id="notifReason" style="color:#92400e;font-size:16px;white-space:pre-wrap;line-height:1.8;font-weight:500;">—</div>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-primary" onclick="closeModal('notificationReasonModal')">Close</button></div>
+    </div>
+</div>
+
 <!-- LOGIN MODAL -->
 <div class="modal-overlay" id="loginModal">
     <div class="modal-box">
@@ -457,14 +506,13 @@ function renderStats() {
     var active = d.capitals.filter(function(r){ return r.status === 'Active'; }).length;
     document.getElementById('statTotal').textContent   = d.all.length;
     document.getElementById('statAsset').textContent   = d.assets.length;
-    document.getElementById('statActive').textContent  = active;
     document.getElementById('assetCount').textContent  = d.assets.length   || '';
 }
 
 /* ─────────────── NOTIFICATIONS ─────────────── */
-function renderNotifications() {
+async function renderNotifications() {
     renderAssetNotifications();
-    renderMessageNotifications();
+    await renderMessageNotifications();
     updateUnreadCount();
 }
 
@@ -479,11 +527,11 @@ function renderAssetNotifications() {
     if (currentUser.role !== 'Admin') {
         assetNotifs = userNotifications.filter(n => 
             (n.requesterEmail === currentUser.email) &&
-            (n.type.includes('approved') || n.type.includes('denied') || n.type === 'asset-request')
+            (n.type.includes('approved') || n.type.includes('denied') || n.type.includes('pending-finance') || n.type.includes('pending-cfo') || n.type.includes('cfo-denial') || n.type.includes('cfo_approval') || n.type.includes('pending-md') || n.type.includes('pending_md') || n.type.includes('md-denial') || n.type.includes('md_denial') || n.type.includes('md_final') || n.type === 'asset-request')
         );
     } else {
         assetNotifs = userNotifications.filter(n => 
-            (n.type.includes('approved') || n.type.includes('denied') || n.type === 'asset-request')
+            (n.type.includes('approved') || n.type.includes('denied') || n.type.includes('pending-finance') || n.type.includes('pending-cfo') || n.type.includes('cfo-denial') || n.type.includes('cfo_approval') || n.type.includes('pending-md') || n.type.includes('pending_md') || n.type.includes('md-denial') || n.type.includes('md_denial') || n.type.includes('md_final') || n.type === 'asset-request')
         );
     }
     
@@ -506,13 +554,46 @@ function renderAssetNotifications() {
             bgColor = isDarkMode ? '#7f1d1d' : '#fee2e2';
             borderColor = '#ef4444';
             textColor = isDarkMode ? '#fca5a5' : '#991b1b';
+        } else if (n.type.includes('pending-finance')) {
+            bgColor = isDarkMode ? '#0e4a8b' : '#e0f2fe';
+            borderColor = '#0369a1';
+            textColor = isDarkMode ? '#7dd3fc' : '#0c4a6e';
+        } else if (n.type.includes('pending-cfo') || n.type.includes('cfo_review')) {
+            bgColor = isDarkMode ? '#1e3a8a' : '#fce7f3';
+            borderColor = '#ec4899';
+            textColor = isDarkMode ? '#bfdbfe' : '#831843';
+        } else if (n.type.includes('cfo-denial') || n.type.includes('cfo_denial')) {
+            bgColor = isDarkMode ? '#7f1d1d' : '#fee2e2';
+            borderColor = '#ef4444';
+            textColor = isDarkMode ? '#fca5a5' : '#991b1b';
+        } else if (n.type.includes('cfo_approval') || n.type.includes('final_approval')) {
+            bgColor = isDarkMode ? '#064e3b' : '#d1fae5';
+            borderColor = '#10b981';
+            textColor = isDarkMode ? '#86efac' : '#065f46';
+        } else if (n.type.includes('pending-md') || n.type.includes('pending_md')) {
+            bgColor = isDarkMode ? '#3730a3' : '#ede9fe';
+            borderColor = '#a855f7';
+            textColor = isDarkMode ? '#d8b4fe' : '#5b21b6';
+        } else if (n.type.includes('md-denial') || n.type.includes('md_denial')) {
+            bgColor = isDarkMode ? '#7f1d1d' : '#fee2e2';
+            borderColor = '#ef4444';
+            textColor = isDarkMode ? '#fca5a5' : '#991b1b';
+        } else if (n.type.includes('md_final') || n.type.includes('md_final_approval')) {
+            bgColor = isDarkMode ? '#064e3b' : '#d1fae5';
+            borderColor = '#10b981';
+            textColor = isDarkMode ? '#86efac' : '#065f46';
         }
         
         const readStyle = n.read ? 'opacity: 0.6;' : '';
         
+        // Store notification in global map for modal
+        const notifKey = 'notif_' + (n.relatedId || n._id || Date.now());
+        window.requestDetailsMap = window.requestDetailsMap || {};
+        window.requestDetailsMap[notifKey] = n;
+        
         const actionButton = '<button onclick="deleteNotification(\'' + n._id + '\')" style="background:rgba(239,68,68,0.7);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:8px;" onmouseover="this.style.background=\'rgb(239,68,68)\';" onmouseout="this.style.background=\'rgba(239,68,68,0.7)\';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Delete</button>';
         
-        return '<div style="border-left:3px solid ' + borderColor + '; background:' + bgColor + '; padding:12px; margin-bottom:10px; border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;' + readStyle + '">' +
+        return '<div style="border-left:3px solid ' + borderColor + '; background:' + bgColor + '; padding:12px; margin-bottom:10px; border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;' + readStyle + 'cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform=\'translateX(4px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.1)\';" onmouseout="this.style.transform=\'translateX(0)\';this.style.boxShadow=\'none\';" onclick="openRequestDetailsModal(\'' + notifKey + '\')">' +
             '<div style="flex:1;">' +
             '<div style="font-weight:600;font-size:12px;margin-bottom:4px;color:' + textColor + ';">' + n.title + '</div>' +
             '<div style="font-size:12px;color:var(--text);margin-bottom:6px;">' + (n.message.substring(0, 60) + (n.message.length > 60 ? '...' : '')) + '</div>' +
@@ -524,13 +605,50 @@ function renderAssetNotifications() {
 }
 
 /* ─────────────── MESSAGE NOTIFICATIONS ─────────────── */
-function renderMessageNotifications() {
+async function renderMessageNotifications() {
     const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
-    const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
     const container = document.getElementById('messageNotificationsContainer');
-    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User' };
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User', id: null };
     
     let messageNotifs = [];
+    
+    // Fetch contact replies from backend API if user is logged in
+    let apiContactReplies = [];
+    if (currentUser.id) {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/contact/user/${currentUser.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                // Transform API data to match notification format
+                apiContactReplies = (data.contacts || []).map(contact => ({
+                    _id: contact.id,
+                    type: 'contact-reply',
+                    title: contact.subject,
+                    message: contact.replyMessage || contact.message,
+                    contactEmail: contact.email,
+                    toEmail: contact.email,
+                    originalMessage: contact.message,
+                    adminReply: contact.replyMessage,
+                    replyDate: contact.replyDate,
+                    timestamp: new Date(contact.replyDate || contact.messageDate).toLocaleString(),
+                    read: false,
+                    status: contact.status
+                }));
+            }
+        } catch (error) {
+            console.log('Could not fetch contact replies from API:', error);
+        }
+    }
+    
+    // Fall back to localStorage if API fetch fails
+    const contactReplies = apiContactReplies.length > 0 ? apiContactReplies : 
+                           JSON.parse(localStorage.getItem('contactReplies') || '[]');
     
     // Regular users see contact messages and contact replies
     if (currentUser.role !== 'Admin') {
@@ -539,8 +657,8 @@ function renderMessageNotifications() {
             n.type === 'user-reply'
         );
         
-        // Add contact replies for this user
-        const userReplies = contactReplies.filter(r => r.toEmail === currentUser.email);
+        // Add contact replies for this user (with status = 'replied')
+        const userReplies = contactReplies.filter(r => r.status === 'replied' || r.adminReply);
         messageNotifs = [...messageNotifs, ...userReplies];
     } else {
         // Admin sees contact messages and user replies
@@ -553,7 +671,6 @@ function renderMessageNotifications() {
         container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No messages yet.</p>';
         return;
     }
-    
     container.innerHTML = messageNotifs.slice(-5).reverse().map((n, i) => {
         const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
         let bgColor = isDarkMode ? '#1e3a8a' : '#dbeafe';
@@ -820,8 +937,16 @@ function clearMessageNotifications() {
 let currentReplyToAdminId = null;
 
 function openReplyToAdmin(replyId) {
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
     const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
-    const reply = contactReplies.find(r => r._id === replyId);
+    
+    // Try to find in contactReplies (from API) first
+    let reply = contactReplies.find(r => r._id == replyId);
+    
+    // Fall back to searching in userNotifications
+    if (!reply) {
+        reply = userNotifications.find(r => r._id == replyId);
+    }
     
     if (!reply) return;
     
@@ -829,12 +954,32 @@ function openReplyToAdmin(replyId) {
     
     // Mark as read
     reply.read = true;
-    localStorage.setItem('contactReplies', JSON.stringify(contactReplies));
+    if (reply.type === 'contact-reply') {
+        let updatedReplies = contactReplies.map(r => r._id == replyId ? reply : r);
+        localStorage.setItem('contactReplies', JSON.stringify(updatedReplies));
+    } else {
+        let updatedNotifs = userNotifications.map(n => n._id == replyId ? reply : n);
+        localStorage.setItem('userNotifications', JSON.stringify(updatedNotifs));
+    }
     renderNotifications();
     
     // Populate modal with admin's reply details
-    document.getElementById('adminReplyContent').textContent = reply.message || '—';
-    document.getElementById('adminReplyTimestamp').textContent = reply.timestamp || '—';
+    // Show admin's reply message if available, otherwise show original message
+    const displayMessage = reply.adminReply || reply.message || '—';
+    const displayTitle = reply.originalMessage ? `Original Message:\n${reply.originalMessage}\n\nAdmin Reply:` : 'Response:';
+    
+    document.getElementById('adminReplyContent').innerHTML = 
+        '<div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">' +
+        '<strong style="color: var(--muted);">Your message:</strong><br>' +
+        '<div style="margin-top: 8px; padding: 10px; background: var(--bg-secondary); border-radius: 6px; color: var(--text);">' +
+        (reply.originalMessage || reply.message || '—') +
+        '</div></div>' +
+        '<strong style="color: var(--muted);">Admin reply:</strong><br>' +
+        '<div style="margin-top: 8px; padding: 10px; background: var(--bg-secondary); border-radius: 6px; color: var(--text);">' +
+        (reply.adminReply || '—') +
+        '</div>';
+    
+    document.getElementById('adminReplyTimestamp').textContent = reply.replyDate ? new Date(reply.replyDate).toLocaleString() : (reply.timestamp || '—');
     document.getElementById('userReplyText').value = '';
     
     openModal('userReplyToAdminModal');
@@ -851,7 +996,7 @@ function sendReplyToAdmin() {
     }
     
     const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
-    const adminReply = contactReplies.find(r => r._id === currentReplyToAdminId);
+    const adminReply = contactReplies.find(r => r._id == currentReplyToAdminId);
     
     if (!adminReply) return;
     
@@ -866,7 +1011,7 @@ function sendReplyToAdmin() {
         fromEmail: currentUser.email,
         fromName: currentUser.name || 'User',
         linkedAdminReplyId: currentReplyToAdminId,
-        linkedContactMessageId: adminReply.linkedContactMessageId,
+        linkedContactMessageId: adminReply._id,
         timestamp: new Date().toLocaleString(),
         read: false
     };
@@ -1017,7 +1162,12 @@ function renderAssetTable() {
         const requestAmount = parseFloat(r.qty || r.requestedFund) || 0;
         const quantity = requestAmount ? requestAmount.toLocaleString('en-IN') : '—';
         
-        return '<tr>' +
+        // Store request in global map with unique key
+        const requestKey = 'req_' + (r.requestId || r._id || Date.now());
+        window.requestDetailsMap = window.requestDetailsMap || {};
+        window.requestDetailsMap[requestKey] = r;
+        
+        return '<tr style="cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'rgba(59,130,246,0.05)\';" onmouseout="this.style.background=\'transparent\';" onclick="openRequestDetailsModal(\'' + requestKey + '\')">' +
             '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
             '<td><strong style="color:var(--navy);">' + (r.requestId || '—') + '</strong></td>' +
             '<td style="text-align:center;font-weight:600;color:var(--accent);">' + (r.capitalType || '—') + '</td>' +
@@ -1106,6 +1256,139 @@ function handleSearch(q) {
 /* ─────────────── MODALS ─────────────── */
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ─────────────── OPEN REQUEST DETAILS MODAL ─────────────── */
+function openRequestDetailsModal(requestKey) {
+    window.requestDetailsMap = window.requestDetailsMap || {};
+    let request = window.requestDetailsMap[requestKey];
+    
+    if (!request) {
+        console.error('Request not found:', requestKey);
+        alert('Error: Request details not found');
+        return;
+    }
+    
+    // Check if this is a notification (starts with 'notif_' and has type/message fields)
+    if (requestKey.startsWith('notif_') && request.type && request.message) {
+        openNotificationReasonModal(request);
+        return;
+    }
+    
+    // Check if this is a notification by other means (has relatedTo and message fields)
+    if (request.relatedTo === 'asset_request' && request.message) {
+        openNotificationReasonModal(request);
+        return;
+    }
+    
+    // If this is a request object with full details, show full details modal
+    // Populate basic details
+    document.getElementById('detailRequestId').textContent = '#' + (request.requestId || request.id || '—');
+    document.getElementById('detailAssetName').textContent = request.assetName || request.name || '—';
+    document.getElementById('detailCapitalType').textContent = request.capitalType || '—';
+    document.getElementById('detailRequester').textContent = request.requesterName || request.userName || '—';
+    
+    // Populate financial details
+    const requestAmount = parseFloat(request.qty || request.requestedFund || request.assetValue || 0);
+    document.getElementById('detailRequestAmount').textContent = requestAmount ? '₹' + requestAmount.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
+    
+    const allocatedFund = parseFloat(request.allocatedFund || 0);
+    document.getElementById('detailAllocatedFund').textContent = allocatedFund ? '₹' + allocatedFund.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
+    
+    document.getElementById('detailRequestDate').textContent = request.requestDate || '—';
+    
+    // Populate status with color
+    const status = request.status || 'Pending';
+    let statusHtml = '';
+    if (status === 'Approved' || status === 'approved') {
+        statusHtml = '<span style="background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">✓ Approved</span>';
+    } else if (status === 'Denied' || status === 'denied') {
+        statusHtml = '<span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">✗ Denied</span>';
+    } else {
+        statusHtml = '<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">⏳ Pending</span>';
+    }
+    document.getElementById('detailStatus').innerHTML = statusHtml;
+    
+    // Handle remarks and denial reason sections
+    const remarksSection = document.getElementById('detailRemarksSection');
+    const denialSection = document.getElementById('detailDenialSection');
+    
+    if (request.capitalMasterRemarks) {
+        document.getElementById('detailRemarks').textContent = request.capitalMasterRemarks;
+        remarksSection.style.display = 'block';
+    } else {
+        remarksSection.style.display = 'none';
+    }
+    
+    if (request.denialReason) {
+        document.getElementById('detailDenialReason').textContent = request.denialReason;
+        denialSection.style.display = 'block';
+    } else {
+        denialSection.style.display = 'none';
+    }
+    
+    // Open the modal
+    openModal('requestDetailsModal');
+}
+
+/* ─────────────── OPEN NOTIFICATION REASON MODAL ─────────────── */
+function openNotificationReasonModal(notification) {
+    if (!notification) return;
+    
+    // Update title based on type
+    if (notification.type.includes('approved') || notification.type.includes('final_approval')) {
+        document.getElementById('notifTitle').textContent = '✓ Request Approved';
+        document.getElementById('notifSubtitle').textContent = 'Capital Master has approved your request';
+    } else if (notification.type.includes('denied') || notification.type.includes('denial')) {
+        document.getElementById('notifTitle').textContent = '✗ Request Denied';
+        document.getElementById('notifSubtitle').textContent = 'Capital Master has rejected your request';
+    } else if (notification.type.includes('pending')) {
+        document.getElementById('notifTitle').textContent = '⏳ Request Status';
+        document.getElementById('notifSubtitle').textContent = 'An update on your request';
+    } else {
+        document.getElementById('notifTitle').textContent = notification.title || 'Notification';
+        document.getElementById('notifSubtitle').textContent = 'Capital Master Decision';
+    }
+    
+    // Display just the reason/message
+    document.getElementById('notifReason').textContent = notification.message || 'No details provided';
+    
+    // Update the box styling and icon based on type
+    const reasonBox = document.getElementById('notifReasonBox');
+    const headerIcon = document.getElementById('notifIconHeader');
+    
+    if (notification.type.includes('denied') || notification.type.includes('denial')) {
+        reasonBox.style.background = '#fee2e2';
+        reasonBox.style.borderLeftColor = '#ef4444';
+        reasonBox.style.borderBottomColor = '#ef4444';
+        reasonBox.style.borderRightColor = '#ef4444';
+        reasonBox.style.borderTopColor = '#ef4444';
+        document.getElementById('notifReason').style.color = '#991b1b';
+        headerIcon.style.background = '#fee2e2';
+        headerIcon.style.color = '#ef4444';
+    } else if (notification.type.includes('approved') || notification.type.includes('final_approval')) {
+        reasonBox.style.background = '#d1fae5';
+        reasonBox.style.borderLeftColor = '#10b981';
+        reasonBox.style.borderBottomColor = '#10b981';
+        reasonBox.style.borderRightColor = '#10b981';
+        reasonBox.style.borderTopColor = '#10b981';
+        document.getElementById('notifReason').style.color = '#065f46';
+        headerIcon.style.background = '#d1fae5';
+        headerIcon.style.color = '#10b981';
+    } else {
+        reasonBox.style.background = '#e0f2fe';
+        reasonBox.style.borderLeftColor = '#0369a1';
+        reasonBox.style.borderBottomColor = '#0369a1';
+        reasonBox.style.borderRightColor = '#0369a1';
+        reasonBox.style.borderTopColor = '#0369a1';
+        document.getElementById('notifReason').style.color = '#0c4a6e';
+        headerIcon.style.background = '#e0f2fe';
+        headerIcon.style.color = '#0369a1';
+    }
+    
+    // Open the modal
+    openModal('notificationReasonModal');
+}
+
 document.querySelectorAll('.modal-overlay').forEach(function(el) {
     el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
 });

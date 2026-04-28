@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital Management — MD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<script>
+// Check if user is logged in - redirect to login if not
+(function checkLogin() {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+        window.location.href = 'login.html';
+    }
+})();
+
+// Apply saved theme on page load
+(function applyTheme() {
+    const SETTINGS_KEY = 'BudgetMS_settings';
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    const settings = stored ? JSON.parse(stored) : { theme: 'light' };
+    
+    if (settings.theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (settings.theme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (prefersDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+})();
+</script>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon"><i class="fa-solid fa-box"></i></div>
+            <div class="logo-text">BudgetMS<span>Management Suite</span></div>
+        </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item">
+        <a href="dashboard.html"><div class="nav-icon"><i class="fa-solid fa-house"></i></div>Dashboard</a>
+    </div>
+    <div class="nav-item">
+        <a href="asset.html"><div class="nav-icon"><i class="fa-solid fa-boxes-stacked"></i></div>Capital Request</a>
+    </div>
+    <div class="nav-item">
+        <a href="capitalmaster.html"><div class="nav-icon"><i class="fa-solid fa-building-columns"></i></div>Capital Master</a>
+    </div>
+    <div class="nav-item">
+        <a href="financemanager.html"><div class="nav-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>Finance Manager</a>
+    </div>
+    <div class="nav-item">
+        <a href="cfo.html"><div class="nav-icon"><i class="fa-solid fa-crown"></i></div>CFO</a>
+    </div>
+    <div class="nav-item active">
+        <a href="md.html"><div class="nav-icon"><i class="fa-solid fa-gem"></i></div>MD</a>
+    </div>
+    <div class="nav-item">
+        <a href="list.html"><div class="nav-icon"><i class="fa-solid fa-list"></i></div>Records List</a>
+    </div>
+    <div class="nav-item">
+        <a href="aboutus.html"><div class="nav-icon"><i class="fa-solid fa-circle-info"></i></div>About Us</a>
+    </div>
+    <div class="sidebar-bottom">
+        <a href="#" onclick="openModal('contactModal')"><i class="fa-solid fa-headset"></i> Contact Support</a>
+    </div>
+</aside>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')"><i class="fa-solid fa-bars"></i></button>
+    <div class="topbar-title"><i class="fa-solid fa-gem" style="color:var(--navy);margin-right:6px;"></i>MD Final Approval</div>
+    <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" placeholder="Search requests…" id="globalSearch" oninput="handleSearch(this.value)">
+    </div>
+    <div class="topbar-actions">
+        <div class="profile-btn" onclick="toggleProfileMenu()" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(59,130,246,.1); border-radius: 10px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6d28d9, #a855f7); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px;" id="userAvatarDash">MD</div>
+            <div style="display: flex; flex-direction: column; min-width: 100px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--navy);" id="userNameDash">Admin</div>
+                <div style="font-size: 11px; color: var(--muted);" id="userRoleDash">MD</div>
+            </div>
+            <i class="fa-solid fa-chevron-down" style="font-size: 12px; color: var(--muted);"></i>
+        </div>
+        <div class="profile-dropdown" id="profileDropdownDash" style="position: absolute; top: 60px; right: 20px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,.1); display: none; z-index: 100; min-width: 220px;">
+            <div style="padding: 16px; border-bottom: 1px solid var(--border);">
+                <div style="font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 3px;" id="dropdownUserName">MD</div>
+                <div style="font-size: 11px; color: var(--muted);" id="dropdownUserEmail">md@capital.com</div>
+            </div>
+            <div style="padding: 8px;">
+                <a href="#" onclick="openModal('profileModal'); return false;" style="display: flex; align-items: center; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: 8px; transition: .2s; font-size: 12px;">
+                    <i class="fa-solid fa-user" style="width: 16px; color: #3b82f6;"></i>
+                    <span>My Profile</span>
+                </a>
+                <a href="settings.html" style="display: flex; align-items: center; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: 8px; transition: .2s; font-size: 12px;">
+                    <i class="fa-solid fa-sliders" style="width: 16px; color: #f59e0b;"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="#" onclick="logout(); return false;" style="display: flex; align-items: center; gap: 10px; padding: 10px; color: #ef4444; text-decoration: none; border-radius: 8px; transition: .2s; font-size: 12px;">
+                    <i class="fa-solid fa-arrow-right-from-bracket" style="width: 16px;"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+<div class="page">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner" style="background:linear-gradient(135deg,#ede9fe 0%,#ddd6fe 60%,#c4b5fd 100%);margin-bottom:24px;">
+        <div class="wb-date">
+            <div class="date-num" id="pageDate">14</div>
+            <div class="date-str" id="pageDay">Mar 2026</div>
+        </div>
+        <div style="position:relative;">
+            <div class="wb-tag" style="background:rgba(109,40,217,.2);border:1px solid rgba(109,40,217,.35);color:#5b21b6;">MD EXECUTIVE</div>
+            <h1 style="color:#4c1d95;margin-bottom:6px;">Ultimate Capital Approval Authority</h1>
+            <p style="color:rgba(76,29,149,.6);font-size:14px;">Requests approved by CFO require your ultimate executive approval. Make final capital decisions and provide strategic corporate remarks.</p>
+        </div>
+    </div>
+
+    <!-- REQUEST STATUS SUMMARY -->
+    <div class="section-card" style="margin-bottom:24px;">
+        <div class="sc-header">
+            <div class="sc-title"><i class="fa-solid fa-chart-bar" style="background:#a855f7;color:white;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;margin-right:8px;"></i>Request Status Summary</div>
+        </div>
+        <div style="padding:24px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+                <div style="background:var(--card);border:2px solid #f59e0b;border-left:4px solid #f59e0b;padding:18px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.05);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                        <i class="fa-solid fa-hourglass-end" style="color:#f59e0b;font-size:18px;"></i>
+                        <div style="color:#f59e0b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Pending Final Approval</div>
+                    </div>
+                    <div style="color:var(--navy);font-size:28px;font-weight:800;line-height:1;" id="pendingReviewCount">0</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:6px;">From CFO</div>
+                </div>
+                <div style="background:var(--card);border:2px solid #8b5cf6;border-left:4px solid #8b5cf6;padding:18px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.05);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                        <i class="fa-solid fa-check-circle" style="color:#8b5cf6;font-size:18px;"></i>
+                        <div style="color:#8b5cf6;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Finally Approved</div>
+                    </div>
+                    <div style="color:var(--navy);font-size:28px;font-weight:800;line-height:1;" id="approvedCount">0</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:6px;">Ready for execution</div>
+                </div>
+                <div style="background:var(--card);border:2px solid #ef4444;border-left:4px solid #ef4444;padding:18px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.05);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                        <i class="fa-solid fa-ban" style="color:#ef4444;font-size:18px;"></i>
+                        <div style="color:#ef4444;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Rejected</div>
+                    </div>
+                    <div style="color:var(--navy);font-size:28px;font-weight:800;line-height:1;" id="deniedCount">0</div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:6px;">Rejected proposals</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PENDING REQUESTS FOR MD -->
+    <div class="section-card" style="margin-bottom:24px;">
+        <div class="sc-header">
+            <div class="sc-title">
+                <span class="sc-icon" style="background:#f3e8ff;color:#a855f7;"><i class="fa-solid fa-inbox"></i></span>
+                Requests Awaiting MD Ultimate Approval
+            </div>
+            <span id="pendingCount" style="background:#f59e0b;color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Request ID</th>
+                        <th>Asset Name</th>
+                        <th>Requested By</th>
+                        <th>Asset Value</th>
+                        <th>Allocated Fund</th>
+                        <th>CFO Remarks</th>
+                        <th style="text-align:center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingRequestsTableBody">
+                    <tr class="empty-row"><td colspan="8">Loading requests...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FINALLY APPROVED REQUESTS -->
+    <div class="section-card" style="margin-bottom:24px;">
+        <div class="sc-header">
+            <div class="sc-title">
+                <span class="sc-icon" style="background:#d1fae5;color:#059669;"><i class="fa-solid fa-check-circle"></i></span>
+                MD Finally Approved Requests
+            </div>
+            <span id="approvedCountBadge" style="background:#8b5cf6;color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Request ID</th>
+                        <th>Capital ID</th>
+                        <th>Asset Name</th>
+                        <th>Requested By</th>
+                        <th>Final Allocated Fund</th>
+                        <th>MD Remarks</th>
+                        <th>Approved On</th>
+                    </tr>
+                </thead>
+                <tbody id="approvedRequestsTableBody">
+                    <tr class="empty-row"><td colspan="8">No approved requests yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- REJECTED REQUESTS -->
+    <div class="section-card" style="margin-bottom:24px;">
+        <div class="sc-header">
+            <div class="sc-title">
+                <span class="sc-icon" style="background:#fee2e2;color:#991b1b;"><i class="fa-solid fa-circle-xmark"></i></span>
+                MD Rejected Requests
+            </div>
+            <span id="deniedCountBadge" style="background:#ef4444;color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Request ID</th>
+                        <th>Asset Name</th>
+                        <th>Requested By</th>
+                        <th>Requested Amount</th>
+                        <th>Rejection Reason</th>
+                        <th>Rejected On</th>
+                    </tr>
+                </thead>
+                <tbody id="deniedRequestsTableBody">
+                    <tr class="empty-row"><td colspan="7">No rejected requests yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="about-footer">
+        &#169; 2026 Budget Management System
+    </div>
+
+</div>
+</main>
+
+<!-- APPROVE REQUEST MODAL -->
+<div class="modal-overlay" id="approveRequestModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <div class="modal-head-icon" style="background:#ede9fe;color:#7c3aed;">
+                <i class="fa-solid fa-check-circle"></i>
+            </div>
+            <div>
+                <h3>Ultimate Approval</h3>
+                <p>Approve this capital request as Managerial Director</p>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div style="background:var(--card);padding:14px;border-radius:10px;margin-bottom:16px;font-size:12px;border:1px solid var(--border);">
+                <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Request ID:</strong><br><span id="approveRequestId" style="color:var(--navy);font-weight:600;">-</span></div>
+                <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Asset Name:</strong><br><span id="approveAssetName" style="color:var(--navy);font-weight:600;">-</span></div>
+                <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Requested By:</strong><br><span id="approveRequesterName" style="color:var(--navy);font-weight:600;">-</span></div>
+                <div style="margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div><strong style="color:var(--muted);">Asset Value:</strong><br><span id="approveAssetValue" style="color:var(--navy);font-weight:600;">-</span></div>
+                    <div><strong style="color:var(--muted);">Allocated Fund:</strong><br><span id="approveAllocatedFund" style="color:#8b5cf6;font-weight:600;">-</span></div>
+                </div>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">CFO Remarks</label>
+                <div style="background:var(--card);padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;color:var(--text);max-height:100px;overflow-y:auto;" id="cfoRemarksDisplay">—</div>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">MD Comment/Remarks (Optional)</label>
+                <textarea id="mdRemarks" rows="4" placeholder="Add your comments or strategic remarks before approval..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;resize:none;font-family:Arial,sans-serif;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';"></textarea>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-cancel" onclick="closeModal('approveRequestModal')">Cancel</button>
+            <button class="btn-primary" onclick="submitApproveRequest()" style="background:#8b5cf6;border:none;"><i class="fa-solid fa-check" style="margin-right:6px;"></i>Approve & Finalize</button>
+        </div>
+    </div>
+</div>
+<!-- REJECT REQUEST MODAL -->
+<div class="modal-overlay" id="rejectRequestModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <div class="modal-head-icon" style="background:#fee2e2;color:#991b1b;">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <div>
+                <h3>Reject Request</h3>
+                <p>Provide strategic reason for rejection</p>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div style="background:var(--card);padding:14px;border-radius:10px;margin-bottom:16px;font-size:12px;border:1px solid var(--border);">
+                <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Request ID:</strong><br><span id="rejectRequestId" style="color:var(--navy);font-weight:600;">-</span></div>
+                <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Asset Name:</strong><br><span id="rejectAssetName" style="color:var(--navy);font-weight:600;">-</span></div>
+                <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Requested By:</strong><br><span id="rejectRequesterName" style="color:var(--navy);font-weight:600;">-</span></div>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#991b1b;margin-bottom:8px;">Reason for Rejection *</label>
+                <textarea id="rejectionReason" rows="4" placeholder="Explain strategic reasons for rejection..." style="width:100%;padding:10px 12px;border:1.5px solid #fee2e2;border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;resize:none;font-family:Arial,sans-serif;" onfocus="this.style.borderColor='#ef4444';this.style.boxShadow='0 0 0 3px rgba(239,68,68,.1)';" onblur="this.style.borderColor='#fee2e2';this.style.boxShadow='none';"></textarea>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-cancel" onclick="closeModal('rejectRequestModal')">Cancel</button>
+            <button class="btn-primary" onclick="submitRejectRequest()" style="background:#ef4444;border:none;"><i class="fa-solid fa-ban" style="margin-right:6px;"></i>Reject Request</button>
+        </div>
+    </div>
+</div>
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="profileModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-user"></i></div><div><h3>User Profile</h3><p>Your account information</p></div></div>
+        <div class="modal-body">
+            <div style="text-align:center;margin-bottom:18px;">
+                <div id="userAvatar" style="width:70px;height:70px;background:linear-gradient(135deg,#a855f7,#d8b4fe);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:white;box-shadow:0 6px 16px rgba(168,85,247,.35);">MD</div>
+                <div id="userName" style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;">Managerial Director</div>
+                <div id="userRole" style="font-size:12px;color:var(--muted);">MD</div>
+            </div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-envelope" style="color:var(--accent);margin-right:6px;"></i>Email</div><div id="userEmail" class="modal-info-val">md@company.com</div></div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-user" style="color:var(--emerald);margin-right:6px;"></i>Username</div><div id="userUsername" class="modal-info-val">md_director</div></div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-calendar" style="color:var(--gold);margin-right:6px;"></i>Login Time</div><div id="userLoginTime" class="modal-info-val">-</div></div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> Logout</button><button class="btn-primary" onclick="closeModal('profileModal')">Close</button></div>
+    </div>
+</div>
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-headset"></i></div><div><h3>Contact Support</h3><p>We'll get back to you shortly</p></div></div>
+        <div class="modal-body">
+            <div class="modal-field"><label>Your Name</label><input type="text" id="contactName" placeholder="Enter your full name" required></div>
+            <div class="modal-field"><label>Email</label><input type="email" id="contactEmail" placeholder="Enter your email address" required></div>
+            <div class="modal-field"><label>Message</label><textarea rows="4" id="contactMessage" placeholder="Describe your issue or question…"></textarea></div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:12.5px;color:var(--muted);">
+                <div><i class="fa-solid fa-phone" style="color:var(--navy);margin-right:5px;"></i>+91 98765 43210</div>
+                <div><i class="fa-solid fa-envelope" style="color:var(--navy);margin-right:5px;"></i>support@budgetms.com</div>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('contactModal')">Cancel</button><button class="btn-primary" onclick="validateAndSendContactForm()"><i class="fa-solid fa-paper-plane"></i> Send Message</button></div>
+    </div>
+</div>
+<script>
+let currentRequestIdForApproval = null;
+let currentRequestIdForRejection = null;
+let allPendingRequests = [];
+let allApprovedRequests = [];
+let allRejectedRequests = [];
+// Update page date
+const today = new Date();
+document.getElementById('pageDate').textContent = today.getDate();
+const monthYear = today.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
+document.getElementById('pageDay').textContent = monthYear;
+// Initialize page
+function initializePage() {
+    loadPendingRequests();
+    loadApprovedRequests();
+    loadRejectedRequests();
+    updateStatusCounts();
+}
+// Load pending requests from backend
+function loadPendingRequests() {
+    fetch('/api/assets/pending-cfo', {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.assets) {
+            renderPendingRequests(data.assets);
+        }
+    })
+    .catch(err => {
+        console.error('Error loading pending requests:', err);
+        // Fallback to local storage for demo
+        const assetRecords = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+        const pendingRecords = assetRecords.filter(r => r.status === 'approved_by_cfo');
+        renderPendingRequests(pendingRecords);
+    });
+}
+
+// Render pending requests table
+function renderPendingRequests(requests) {
+    allPendingRequests = requests;
+    const tbody = document.getElementById('pendingRequestsTableBody');
+    
+    if (!requests || requests.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><i class="fa-solid fa-inbox" style="opacity:.3;margin-right:8px;"></i>No requests pending review.</td></tr>';
+        document.getElementById('pendingCount').textContent = '0';
+        return;
+    }
+    
+    document.getElementById('pendingCount').textContent = requests.length;
+    
+    tbody.innerHTML = allPendingRequests.map((req, idx) => {
+        const reqId = req.id || req._id || req.requestId;
+        return `
+        <tr>
+            <td>${idx + 1}</td>
+            <td><strong>#${reqId || '—'}</strong></td>
+            <td>${req.assetName || req.name || '—'}</td>
+            <td>${req.userName || 'User' || '—'}</td>
+            <td>₹${(req.assetValue || 0).toLocaleString()}</td>
+            <td>₹${(req.allocatedFund || 0).toLocaleString()}</td>
+            <td style="max-width:200px;font-size:12px;color:var(--muted);">${req.cfoRemarks || '—'}</td>
+            <td style="text-align:center;">
+                <button onclick="openApproveModal('${reqId}')" style="padding:6px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" onmouseover="this.style.background='#7c3aed';" onmouseout="this.style.background='#8b5cf6';">
+                    <i class="fa-solid fa-check" style="margin-right:4px;"></i>Approve
+                </button>
+                <button onclick="openRejectModal('${reqId}')" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;" onmouseover="this.style.background='#dc2626';" onmouseout="this.style.background='#ef4444';">
+                    <i class="fa-solid fa-ban" style="margin-right:4px;"></i>Reject
+                </button>
+            </td>
+        </tr>
+    `;
+    }).join('');
+}
+
+// Open approve modal
+function openApproveModal(requestId) {
+    console.log('Opening approve modal for request:', requestId);
+    console.log('Available requests:', allPendingRequests);
+    const request = allPendingRequests.find(r => (r.id === requestId || r._id === requestId || r.requestId === requestId));
+    if (!request) {
+        console.error('Request not found:', requestId, 'in', allPendingRequests);
+        alert('Error: Request not found. Please refresh the page and try again.');
+        return;
+    }
+    console.log('Found request:', request);
+    
+    currentRequestIdForApproval = request.id;
+    document.getElementById('approveRequestId').textContent = '#' + (request.id || request.requestId || '—');
+    document.getElementById('approveAssetName').textContent = request.assetName || request.name || '—';
+    document.getElementById('approveRequesterName').textContent = request.userName || 'User' || '—';
+    document.getElementById('approveAssetValue').textContent = '₹' + (request.assetValue || 0).toLocaleString();
+    document.getElementById('approveAllocatedFund').textContent = '₹' + (request.allocatedFund || 0).toLocaleString();
+    document.getElementById('cfoRemarksDisplay').textContent = request.cfoRemarks || '—';
+    document.getElementById('mdRemarks').value = '';
+    openModal('approveRequestModal');
+}
+
+// Open reject modal
+function openRejectModal(requestId) {
+    console.log('Opening reject modal for request:', requestId);
+    const request = allPendingRequests.find(r => (r.id === requestId || r._id === requestId || r.requestId === requestId));
+    if (!request) {
+        console.error('Request not found:', requestId);
+        alert('Error: Request not found. Please refresh the page and try again.');
+        return;
+    }
+    
+    currentRequestIdForRejection = request.id;
+    document.getElementById('rejectRequestId').textContent = '#' + (request.id || request.requestId || '—');
+    document.getElementById('rejectAssetName').textContent = request.assetName || request.name || '—';
+    document.getElementById('rejectRequesterName').textContent = request.userName || 'User' || '—';
+    document.getElementById('rejectionReason').value = '';
+    openModal('rejectRequestModal');
+}
+
+// Submit approve request
+function submitApproveRequest() {
+    const remarks = document.getElementById('mdRemarks').value.trim();
+    const requestId = currentRequestIdForApproval;
+    
+    if (!requestId) {
+        alert('Error: Request ID not found. Please try again.');
+        return;
+    }
+    
+    fetch(`/api/assets/${requestId}/approve-md`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+        },
+        body: JSON.stringify({
+            remarks: remarks
+        })
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.text().then(text => {
+                throw new Error(`HTTP ${res.status}: ${text}`);
+            });
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('✓ Request finally approved successfully');
+            closeModal('approveRequestModal');
+            initializePage();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to approve request'));
+        }
+    })
+    .catch(err => {
+        console.error('Approval Error:', err);
+        alert('Error: ' + err.message);
+    });
+}
+
+// Submit reject request
+function submitRejectRequest() {
+    const reason = document.getElementById('rejectionReason').value.trim();
+    
+    if (!reason) {
+        alert('Please enter a reason for rejection');
+        return;
+    }
+    
+    const requestId = currentRequestIdForRejection;
+    
+    if (!requestId) {
+        alert('Error: Request ID not found. Please try again.');
+        return;
+    }
+    
+    fetch(`/api/assets/${requestId}/deny-md`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+        },
+        body: JSON.stringify({
+            mdDenialReason: reason
+        })
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.text().then(text => {
+                throw new Error(`HTTP ${res.status}: ${text}`);
+            });
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('✓ Request rejected and user notified');
+            closeModal('rejectRequestModal');
+            initializePage();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to reject request'));
+        }
+    })
+    .catch(err => {
+        console.error('Rejection Error:', err);
+        alert('Error: ' + err.message);
+    });
+}
+
+// Load approved requests
+function loadApprovedRequests() {
+    fetch('/api/assets/approved-by-md', {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.assets) {
+            renderApprovedRequests(data.assets);
+        }
+    })
+    .catch(err => console.error('Error loading approved requests:', err));
+}
+
+// Render approved requests table
+function renderApprovedRequests(requests) {
+    const tbody = document.getElementById('approvedRequestsTableBody');
+    
+    if (!requests || requests.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No approved requests yet.</td></tr>';
+        document.getElementById('approvedCountBadge').textContent = '0';
+        return;
+    }
+    
+    document.getElementById('approvedCountBadge').textContent = requests.length;
+    
+    tbody.innerHTML = requests.map((req, idx) => `
+        <tr>
+            <td>${idx + 1}</td>
+            <td><strong>#${req.id || '—'}</strong></td>
+            <td style="font-weight:600;color:#8b5cf6;">${req.capitalId || '—'}</td>
+            <td>${req.assetName || '—'}</td>
+            <td>${req.userName || '—'}</td>
+            <td>₹${(req.allocatedFund || 0).toLocaleString()}</td>
+            <td style="max-width:150px;font-size:12px;color:var(--muted);">${req.mdRemarks || '—'}</td>
+            <td>${req.mdApprovedOn ? new Date(req.mdApprovedOn).toLocaleDateString() : '—'}</td>
+        </tr>
+    `).join('');
+}
+
+// Load rejected requests
+function loadRejectedRequests() {
+    fetch('/api/assets/denied-by-md', {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.assets) {
+            renderRejectedRequests(data.assets);
+        }
+    })
+    .catch(err => console.error('Error loading rejected requests:', err));
+}
+
+// Render rejected requests table
+function renderRejectedRequests(requests) {
+    const tbody = document.getElementById('deniedRequestsTableBody');
+    
+    if (!requests || requests.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No rejected requests yet.</td></tr>';
+        document.getElementById('deniedCountBadge').textContent = '0';
+        return;
+    }
+    
+    document.getElementById('deniedCountBadge').textContent = requests.length;
+    
+    tbody.innerHTML = requests.map((req, idx) => `
+        <tr>
+            <td>${idx + 1}</td>
+            <td><strong>#${req.id || '—'}</strong></td>
+            <td>${req.assetName || '—'}</td>
+            <td>${req.userName || '—'}</td>
+            <td>₹${(req.assetValue || 0).toLocaleString()}</td>
+            <td style="max-width:200px;font-size:12px;color:#991b1b;">${req.mdDenialReason || '—'}</td>
+            <td>${req.rejectedOn || '—'}</td>
+        </tr>
+    `).join('');
+}
+
+// Update status counts
+function updateStatusCounts() {
+    fetch('/api/assets/status-counts', {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('pendingReviewCount').textContent = data.pendingReview || 0;
+            document.getElementById('approvedCount').textContent = data.finallyApproved || 0;
+            document.getElementById('deniedCount').textContent = data.finallyDenied || 0;
+        }
+    })
+    .catch(err => console.error('Error updating counts:', err));
+}
+
+// Modal control functions
+function openModal(id) { 
+    document.getElementById(id).classList.add('open');
+}
+function closeModal(id) { 
+    document.getElementById(id).classList.remove('open'); 
+}
+document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// Toggle profile menu
+function toggleProfileMenu() {
+    const menu = document.getElementById('profileDropdownDash');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Search functionality
+function handleSearch(query) {
+    if (!query.trim()) {
+        loadPendingRequests();
+        return;
+    }
+    
+    const bodyRows = document.querySelectorAll('#pendingRequestsTableBody tr');
+    bodyRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+    });
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+    window.location.href = 'login.html';
+}
+
+// Contact form submission
+function validateAndSendContactForm() {
+    const name = document.getElementById('contactName').value.trim();
+    const email = document.getElementById('contactEmail').value.trim();
+    const message = document.getElementById('contactMessage').value.trim();
+    
+    if (!name || !email || !message) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    alert('✓ Thank you for contacting us. We will get back to you soon!');
+    closeModal('contactModal');
+}
+
+// Initialize on page load
+window.addEventListener('load', initializePage);
+</script>
+
+</body>
+</html>
