@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home — Budget Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .welcome-banner {
+            position: relative;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: inherit;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            border-color: var(--accent);
+        }
+
+        .module-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .icon-blue { background: #dbeafe; color: #1d4ed8; }
+        .icon-gold { background: #fef3c7; color: #d97706; }
+        .icon-green { background: #d1fae5; color: #059669; }
+
+        .module-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .module-desc {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .feature-item {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 14px;
+        }
+
+        .feature-check {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--emerald), #06b6d4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .feature-text h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 3px;
+        }
+
+        .feature-text p {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .about-box {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+            border-radius: 16px;
+            padding: 28px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .about-box::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .about-box-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .about-box h2 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .about-box p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 8px;
+        }
+
+        .about-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .faq-section {
+            margin-top: 40px;
+        }
+
+        .faq-header {
+            margin-bottom: 24px;
+        }
+
+        .faq-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .faq-items {
+            display: grid;
+            gap: 12px;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 16px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+            transition: 0.2s;
+        }
+
+        .faq-question:hover {
+            background: var(--bg);
+        }
+
+        .faq-icon {
+            font-size: 12px;
+            transition: 0.3s;
+        }
+
+        .faq-item.open .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            display: none;
+            padding: 0 20px 16px 20px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+            border-top: 1px solid var(--border);
+        }
+
+        .faq-item.open .faq-answer {
+            display: block;
+        }
+
+        @media(max-width:1100px) {
+            .modules-grid { grid-template-columns: repeat(2, 1fr); }
+            .features-grid { grid-template-columns: 1fr; }
+        }
+
+        @media(max-width:768px) {
+            .modules-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR 
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="logo-text">BudgetMS<span>Management Suite</span></div>
+        </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active">
+        <a href="homepage.html"><div class="nav-icon"><i class="fa-solid fa-home"></i></div>Home</a>
+    </div>
+    <div class="nav-item">
+        <a href="dashboard.html"><div class="nav-icon"><i class="fa-solid fa-gauge-high"></i></div>Dashboard</a>
+    </div>
+    <div class="nav-item">
+        <a href="capitalmaster.html"><div class="nav-icon"><i class="fa-solid fa-building-columns"></i></div>Capital Master</a>
+    </div>
+    <div class="nav-item">
+        <a href="asset.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Capital Request</a>
+    </div>
+    <div class="nav-item">
+        <a href="list.html"><div class="nav-icon"><i class="fa-solid fa-list"></i></div>Records List</a>
+    </div>
+    <div class="nav-item">
+        <a href="aboutus.html"><div class="nav-icon"><i class="fa-solid fa-circle-info"></i></div>About Us</a>
+    </div>
+   <div class="nav-item">
+        <a href="javascript:void(0)" onclick="scrollToFAQ()"><i class="fa-solid fa-question-circle"></i> FAQ</a>
+    </div>
+    <div class="nav-item active">
+        <a href="homepage.html"><div class="nav-icon"><i class="fa-solid fa-home"></i></div>Home</a>
+    </div>
+    <div class="sidebar-bottom">
+        <a href="#" onclick="openModal('contactModal')"><i class="fa-solid fa-headset"></i> Contact Support</a>
+    </div>-->
+</aside>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-title"><i class="fa-solid fa-home" style="color:var(--navy);margin-right:6px;"></i>Budget Management System</div>
+    <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" placeholder="Search records, assets…">
+    </div>
+    <div class="topbar-actions" id="topbarActions">
+        <div class="icon-btn" title="Login" onclick="window.location.href='login.html'" id="topbarLoginBtn">Login <i class="fa-solid fa-user"></i></div>
+        <div class="icon-btn" title="About" onclick="window.location.href='aboutus.html'">About Us <i class="fa-solid fa-circle-info"></i></div>
+        <div class="icon-btn" title="Contact Us" onclick="openModal('contactModal')">Contact Us <i class="fa-solid fa-envelope"></i></div>
+    </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+<div class="page">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner">
+        <div class="wb-tag">Welcome</div>
+        <h1>BEM Budget Management</h1>
+        <p>Efficiently manage capital assets, track investments, and optimize financial resources for India's leading electric vehicle manufacturer.</p>
+        <div class="wb-actions" id="welcomeActions">
+            <a href="login.html" class="wb-btn wb-btn-primary" id="welcomeLoginBtn"><i class="fa-solid fa-user"></i> Login </a>
+          <!--  <a href="aboutus.html" class="wb-btn wb-btn-secondary"><i class="fa-solid fa-circle-info"></i> Learn More</a>-->
+            <a href="javascript:void(0)" onclick="scrollToFAQ()" class="wb-btn wb-btn-secondary"><i class="fa-solid fa-question-circle"></i> FAQ</a>
+        </div>
+    </div>
+
+    <!-- STATS SECTION -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-change">Overview</div>
+            <div class="stat-icon ic-blue"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="stat-num">₹500+</div>
+            <div class="stat-label">Total Assets Managed</div>
+        </div>
+        <div class="stat-card gold">
+            <div class="stat-change">Capital</div>
+            <div class="stat-icon ic-gold"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="stat-num">2.5K</div>
+            <div class="stat-label">Capital Allocations</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-change">Invested</div>
+            <div class="stat-icon ic-green"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="stat-num">₹2.8Cr</div>
+            <div class="stat-label">Total Invested</div>
+        </div>
+        <div class="stat-card rose">
+            <div class="stat-change">System</div>
+            <div class="stat-icon ic-rose"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-num">100%</div>
+            <div class="stat-label">System Uptime</div>
+        </div>
+    </div>
+
+    <!-- MANAGEMENT MODULES 
+    <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 16px;"><i class="fa-solid fa-boxes" style="color: var(--accent); margin-right: 8px;"></i> Management Modules</h2>
+    </div>
+
+    <div class="modules-grid">
+        <a href="dashboard.html" class="module-card">
+            <div class="module-icon icon-blue">
+                <i class="fa-solid fa-gauge-high"></i>
+            </div>
+            <div class="module-title">Dashboard</div>
+            <div class="module-desc">Real-time overview of capital allocation and performance metrics</div>
+        </a>
+
+        <a href="capitalmaster.html" class="module-card">
+            <div class="module-icon icon-gold">
+                <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <div class="module-title">Capital Master</div>
+            <div class="module-desc">Manage capital entries and investment portfolios</div>
+        </a>
+
+        <a href="asset.html" class="module-card">
+            <div class="module-icon icon-green">
+                <i class="fa-solid fa-cube"></i>
+            </div>
+            <div class="module-title">Capital Request</div>
+            <div class="module-desc">Create and monitor assets and resource allocations</div>
+        </a>
+    </div>-->
+
+    <!-- WHY CHOOSE SECTION -->
+    <div style="margin-bottom: 24px; margin-top: 24px;">
+        <h2 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 16px;"><i class="fa-solid fa-star" style="color: var(--gold); margin-right: 8px;"></i> Why Choose Our System?</h2>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-item">
+            <div class="feature-check">✓</div>
+            <div class="feature-text">
+                <h3>Real-Time Tracking</h3>
+                <p>Monitor capital allocation and asset utilization with live dashboards</p>
+            </div>
+        </div>
+        <div class="feature-item">
+            <div class="feature-check">✓</div>
+            <div class="feature-text">
+                <h3>Comprehensive Reports</h3>
+                <p>Generate detailed reports for better decision-making</p>
+            </div>
+        </div>
+        <div class="feature-item">
+            <div class="feature-check">✓</div>
+            <div class="feature-text">
+                <h3>Data Security</h3>
+                <p>Enterprise-grade security with encrypted data storage</p>
+            </div>
+        </div>
+        <div class="feature-item">
+            <div class="feature-check">✓</div>
+            <div class="feature-text">
+                <h3>Easy Integration</h3>
+                <p>Seamlessly integrate with existing financial systems</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABOUT BLUE ENERGY -->
+    <div class="about-box">
+        <div class="about-box-content">
+            <h2>About BEM</h2>
+            <p>BEM is India's leading manufacturer of electric heavy-duty trucks with innovative battery swapping technology.</p>
+            <p>We're committed to decarbonizing the environment while providing sustainable solutions for the logistics and transportation industry.</p>
+            <p><strong>Vision:</strong> To create a clean technology alternative that decarbonizes the environment while breaking barriers of economic returns.</p>
+        </div>
+    </div>
+
+    <!-- FAQ SECTION -->
+    <div class="faq-section" id="faq-section">
+        <div class="faq-header">
+            <h2><i class="fa-solid fa-question-circle" style="color: var(--accent); margin-right: 8px;"></i> Frequently Asked Questions</h2>
+        </div>
+        <div class="faq-items">
+            <div class="faq-item">
+                <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                    <span>What is the Budget Management System?</span>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    The Budget Management System is a comprehensive solution for managing budget assets, tracking investments, and optimizing financial resources. It provides real-time dashboards, detailed reporting, and secure data management.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                    <span>How do I add a new capital entry?</span>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Navigate to the Capital Master module from the dashboard or sidebar, click on "Add New Capital Entry," fill in the required details, and submit the form. The entry will be immediately reflected in your capital allocations.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                    <span>Can I export reports from the dashboard?</span>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes, the dashboard provides comprehensive reporting features with options to view and download capital allocation reports, asset summaries, and financial statements in various formats.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                    <span>Is my data secure?</span>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Absolutely! We use enterprise-grade security with encrypted data storage, secure access controls, and regular security audits to ensure your capital management data is always protected.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                    <span>How do I contact support?</span>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    You can reach our support team through the "Contact Support" option in the sidebar or by using the Contact Us button in the top navigation. Our team typically responds within 24 hours.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">
+                    <span>What is Capital Request used for?</span>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Capital Request allows you to create, update, and monitor assets and equipment across your organization. You can track asset allocation, manage resource distribution, and maintain detailed asset records.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</main>
+
+<!-- FOOTER -->
+<div class="about-footer">
+    &#169; 2026 Budget Management System
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-headset"></i></div><div><h3>Contact Support</h3><p>We'll get back to you shortly</p></div></div>
+        <div class="modal-body">
+            <div class="modal-field"><label>Your Name</label><input type="text" id="contactName" name="contactName" placeholder="Enter your full name" required></div>
+            <div class="modal-field"><label>Email</label><input type="email" id="contactEmail" name="contactEmail" placeholder="Enter your email address" required></div>
+            <div class="modal-field"><label>Message</label><textarea rows="4" id="contactMessage" name="contactMessage" placeholder="Describe your issue or question…"></textarea></div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:12.5px;color:var(--muted);">
+                <div><i class="fa-solid fa-phone" style="color:var(--navy);margin-right:5px;"></i>+91 98765 43210</div>
+                <div><i class="fa-solid fa-envelope" style="color:var(--navy);margin-right:5px;"></i>support@budgetms.com</div>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('contactModal')">Cancel</button><button class="btn-primary" onclick="validateAndSendContactForm()"><i class="fa-solid fa-paper-plane"></i> Send Message</button></div>
+    </div>
+</div>
+
+<script>
+    // Modal Functions
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('open');
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('open');
+    }
+
+    // Close modal when clicking outside
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('open');
+            }
+        });
+    });
+
+    // Contact Form Validation
+    function validateAndSendContactForm() {
+        var name = document.getElementById('contactName').value.trim();
+        var email = document.getElementById('contactEmail').value.trim();
+        var message = document.getElementById('contactMessage').value.trim();
+        
+        if (!name || !email || !message) {
+            alert('Please fill in all fields.');
+            return;
+        }
+        
+        // Email validation
+        var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(email)) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+        
+        // Create message and save
+        const now = new Date();
+        const messageObj = {
+            name: name,
+            email: email,
+            message: message,
+            timestamp: now.toLocaleString('en-IN')
+        };
+        
+        // Save to localStorage
+        saveContactMessage(messageObj);
+        
+        // Send notification to admin
+        sendAdminNotification(messageObj);
+        
+        // Reset form
+        document.getElementById('contactName').value = '';
+        document.getElementById('contactEmail').value = '';
+        document.getElementById('contactMessage').value = '';
+        closeModal('contactModal');
+        
+        alert('✓ Message sent successfully!\n\nYour message has been sent to the admin.');
+    }
+    
+    // Save contact message to localStorage
+    function saveContactMessage(messageObj) {
+        let messages = JSON.parse(localStorage.getItem('contactMessages')) || [];
+        messages.push(messageObj);
+        localStorage.setItem('contactMessages', JSON.stringify(messages));
+    }
+    
+    // Send notification to admin
+    function sendAdminNotification(messageObj) {
+        let adminNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        
+        adminNotifications.push({
+            _id: Date.now().toString(),
+            type: 'contact-message',
+            title: `New Contact Message from ${messageObj.name}`,
+            message: `Email: ${messageObj.email}\n\nMessage: ${messageObj.message}`,
+            contactEmail: messageObj.email,
+            contactName: messageObj.name,
+            timestamp: new Date().toLocaleString(),
+            read: false
+        });
+        
+        localStorage.setItem('userNotifications', JSON.stringify(adminNotifications));
+    }
+    
+    // View all messages
+    function viewAllMessages() {
+        let messages = JSON.parse(localStorage.getItem('contactMessages')) || [];
+        
+        if (messages.length === 0) {
+            alert('No messages yet.');
+            return;
+        }
+        
+        let view = 'CAPITAL MANAGEMENT - ALL CONTACT MESSAGES\n' + '='.repeat(70) + '\n\n';
+        
+        messages.forEach((msg, index) => {
+            view += `MESSAGE #${index + 1}\n${'-'.repeat(70)}\nDate: ${msg.timestamp}\nFrom: ${msg.name} <${msg.email}>\n\n${msg.message}\n\n`;
+        });
+        
+        view += '='.repeat(70) + `\nTotal Messages: ${messages.length}`;
+        
+        // Create a modal to display messages
+        const displayModal = document.createElement('div');
+        displayModal.innerHTML = `
+            <div class="modal-overlay" onclick="this.remove()" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+                <div class="modal-box" style="background:white;border-radius:12px;padding:24px;width:90%;max-width:600px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <h3 style="margin-bottom:16px;color:#052377;">All Contact Messages (${messages.length})</h3>
+                    <textarea readonly style="width:100%;height:400px;padding:12px;border:1px solid #ddd;border-radius:8px;font-family:monospace;font-size:12px;">${view}</textarea>
+                    <div style="margin-top:16px;display:flex;gap:10px;">
+                        <button onclick="downloadAllMessages()" style="flex:1;padding:10px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Download All as .txt</button>
+                        <button onclick="this.closest('.modal-overlay').remove()" style="flex:1;padding:10px;background:#eee;color:#333;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(displayModal);
+    }
+    
+    // Download all messages as single .txt file
+    function downloadAllMessages() {
+        let messages = JSON.parse(localStorage.getItem('contactMessages')) || [];
+        
+        let content = 'CAPITAL MANAGEMENT - CONTACT MESSAGES ARCHIVE\n' + '='.repeat(70) + '\n\n';
+        
+        messages.forEach((msg, index) => {
+            content += `MESSAGE #${index + 1}\n${'-'.repeat(70)}\nDate: ${msg.timestamp}\nFrom: ${msg.name} <${msg.email}>\n\n${msg.message}\n\n${'─'.repeat(70)}\n\n`;
+        });
+        
+        content += '='.repeat(70) + `\nTotal Messages: ${messages.length}\nExported: ${new Date().toLocaleString('en-IN')}`;
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `contact_messages_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        alert('✓ All messages downloaded successfully!');
+    }
+
+    // Smooth scroll to FAQ section
+    function scrollToFAQ() {
+        const faqSection = document.getElementById('faq-section');
+        if (faqSection) {
+            const offsetTop = faqSection.offsetTop - 100;
+            window.scrollTo({
+                top: offsetTop,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    // Smooth scroll for other anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    // Check authentication status and update UI
+    function updateAuthUI() {
+        const currentUser = localStorage.getItem('currentUser');
+        const topbarLoginBtn = document.getElementById('topbarLoginBtn');
+        const welcomeLoginBtn = document.getElementById('welcomeLoginBtn');
+        
+        if (currentUser) {
+            const user = JSON.parse(currentUser);
+            
+            // Replace topbar login button with profile/dashboard/logout options
+            if (topbarLoginBtn) {
+                topbarLoginBtn.innerHTML = `<i class="fa-solid fa-user-circle"></i> ${user.name.split(' ')[0]}`;
+                topbarLoginBtn.style.cursor = 'pointer';
+                topbarLoginBtn.onclick = function() {
+                    window.location.href = 'dashboard.html';
+                };
+            }
+            
+            // Replace welcome banner login button with dashboard button
+            if (welcomeLoginBtn) {
+                welcomeLoginBtn.innerHTML = `<i class="fa-solid fa-chart-line"></i> Go to Dashboard`;
+                welcomeLoginBtn.href = 'dashboard.html';
+            }
+        }
+    }
+    
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', updateAuthUI);
+</script>
+</script>
+
+</body>
+</html>

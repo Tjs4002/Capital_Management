@@ -1,0 +1,11 @@
+id,name,email,phone,role,status,joinedDate
+1,John Doe,john.doe@capital.com,+1 (555) 123-4567,Admin,Active,2026-01-15
+2,Sarah Smith,sarah.smith@capital.com,+1 (555) 234-5678,Manager,Active,2026-02-01
+3,Mike Johnson,mike.johnson@capital.com,+1 (555) 345-6789,User,Active,2026-02-10
+4,Lisa Anderson,lisa.anderson@capital.com,+1 (555) 456-7890,Manager,Inactive,2026-01-20
+5,David Wilson,david.wilson@capital.com,+1 (555) 567-8901,User,Active,2026-02-15
+6,Emily Brown,emily.brown@capital.com,+1 (555) 678-9012,Manager,Active,2026-02-20
+7,Robert Taylor,robert.taylor@capital.com,+1 (555) 789-0123,User,Pending,2026-03-01
+8,Jennifer Lee,jennifer.lee@capital.com,+1 (555) 890-1234,User,Active,2026-02-25
+9,Charles Martin,charles.martin@capital.com,+1 (555) 901-2345,Admin,Active,2026-01-10
+10,Patricia Garcia,patricia.garcia@capital.com,+1 (555) 012-3456,Manager,Active,2026-01-25

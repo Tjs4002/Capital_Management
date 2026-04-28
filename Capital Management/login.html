@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Capital Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #052377 0%, #3b82f6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #052377, #3b82f6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            margin: 0 auto 15px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: #052377;
+            margin-bottom: 5px;
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            color: #999;
+            letter-spacing: 1px;
+        }
+
+        .login-form h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #052377;
+            margin-bottom: 8px;
+            margin-top: 20px;
+        }
+
+        .login-form p {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            background: white;
+        }
+
+        .form-input::placeholder {
+            color: #999;
+        }
+
+        .demo-users {
+            background: #f0f4ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .demo-users p {
+            margin: 0;
+            margin-bottom: 6px;
+        }
+
+        .demo-users code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #052377;
+            font-weight: 600;
+        }
+
+        .demo-users small {
+            display: block;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #999;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .checkbox-label input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .forgot-link {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn i {
+            font-size: 14px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .error-message.show {
+            display: flex;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .success-message.show {
+            display: flex;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .footer-link {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: #1d4ed8;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .logo-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+
+            .logo-text {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <!-- LOGO -->
+    <div class="logo">
+        <div class="logo-icon">
+            <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div class="logo-text">BudgetMS</div>
+        <div class="logo-subtitle">MANAGEMENT SUITE</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" class="login-form" onsubmit="handleLogin(event)">
+        <h1>Welcome Back</h1>
+        <p>Sign in to your account to continue</p>
+
+        <!-- ERROR MESSAGE -->
+        <div id="errorMessage" class="error-message">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="errorText"></span>
+        </div>
+
+        <!-- SUCCESS MESSAGE -->
+        <div id="successMessage" class="success-message">
+            <i class="fa-solid fa-check-circle"></i>
+            <span>Login successful! Redirecting...</span>
+        </div>
+
+        <!-- EMAIL/USERNAME INPUT -->
+        <div class="form-group">
+            <label class="form-label" for="email">Email or Username</label>
+            <input type="text" id="email" class="form-input" placeholder="admin@capital.com or username" required>
+        </div>
+
+        <!-- PASSWORD INPUT -->
+        <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="password-container">
+                <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+                <button type="button" class="toggle-password" id="togglePasswordBtn" onclick="togglePasswordVisibility()">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- DEMO USERS -->
+        <div class="demo-users">
+            <p><strong>Demo Accounts:</strong></p>
+            <p>Admin: <code>admin@capital.com</code> / <code>admin123</code></p>
+            <p>User: <code>john@capital.com</code> / <code>user123</code></p>
+            <small>Or register a new account to create your own login credentials</small>
+        </div>
+
+        <!-- LOGIN BUTTON -->
+        <button type="submit" class="login-btn" id="loginBtn">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span>Sign In</span>
+        </button>
+
+        <div class="loading" id="loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Signing in...
+        </div>
+    </form>
+
+    <!-- FOOTER -->
+    <div class="login-footer">
+        <p>Budget Management System &copy; 2026. All rights reserved.</p>
+        <p style="margin-top: 12px;">Don't have an account? <a href="registration.html" class="footer-link">Register here</a></p>
+    </div>
+</div>
+
+<script>
+    // Demo users database (for testing)
+    const demoUsers = [
+        {
+            id: 1,
+            name: 'Administrator',
+            email: 'admin@capital.com',
+            password: 'admin123',
+            role: 'Admin'
+        },
+        {
+            id: 2,
+            name: 'John Doe',
+            email: 'john@capital.com',
+            password: 'user123',
+            role: 'User'
+        },
+        {
+            id: 3,
+            name: 'Sarah Smith',
+            email: 'sarah@capital.com',
+            password: 'user123',
+            role: 'Manager'
+        }
+    ];
+
+    function handleLogin(event) {
+        event.preventDefault();
+        
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const loginBtn = document.getElementById('loginBtn');
+        const loading = document.getElementById('loading');
+
+        // Clear previous messages
+        errorMessage.classList.remove('show');
+        successMessage.classList.remove('show');
+
+        // Validate inputs
+        if (!email || !password) {
+            showError('Please enter email and password');
+            return;
+        }
+
+        // Show loading state
+        loginBtn.style.display = 'none';
+        loading.style.display = 'flex';
+
+        // Call backend API
+        fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Store token and user data
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('currentUser', JSON.stringify(data.user));
+                
+                // Show success message
+                successMessage.classList.add('show');
+                
+                // Redirect after 800ms
+                setTimeout(() => {
+                    // Redirect based on role
+                    if (data.user.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                }, 800);
+            } else {
+                showError(data.error || 'Invalid email or password. Please try again.');
+                loginBtn.style.display = 'flex';
+                loading.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Login error:', error);
+            showError('Connection error. Please try again.');
+            loginBtn.style.display = 'flex';
+            loading.style.display = 'none';
+        });
+    }
+
+    function showError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        errorText.textContent = message;
+        errorMessage.classList.add('show');
+    }
+
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('password');
+        const toggleBtn = document.getElementById('togglePasswordBtn');
+        const icon = toggleBtn.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // Check if user already logged in
+    window.addEventListener('load', () => {
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+            const user = JSON.parse(currentUser);
+            // Redirect admins to admin panel, others to dashboard
+            if (user.role === 'Admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

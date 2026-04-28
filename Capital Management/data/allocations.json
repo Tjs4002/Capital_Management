@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "capital_type": "Plant and Machinery",
+    "allocated_amount": 500000,
+    "used_amount": 0,
+    "available_amount": 500000,
+    "remarks": "Initial allocation"
+  },
+  {
+    "id": 2,
+    "capital_type": "Building",
+    "allocated_amount": 500000,
+    "used_amount": 0,
+    "available_amount": 500000,
+    "remarks": "Initial allocation"
+  },
+  {
+    "id": 3,
+    "capital_type": "Vehicles",
+    "allocated_amount": 500000,
+    "used_amount": 0,
+    "available_amount": 500000,
+    "remarks": "Initial allocation"
+  },
+  {
+    "id": 4,
+    "capital_type": "Computer and Electronics",
+    "allocated_amount": 500000,
+    "used_amount": 0,
+    "available_amount": 500000,
+    "remarks": "Initial allocation"
+  },
+  {
+    "id": 5,
+    "capital_type": "Furniture and Fixtures",
+    "allocated_amount": 500000,
+    "used_amount": 0,
+    "available_amount": 500000,
+    "remarks": "Initial allocation"
+  },
+  {
+    "id": 6,
+    "capital_type": "Equipment",
+    "allocated_amount": 500000,
+    "used_amount": 0,
+    "available_amount": 500000,
+    "remarks": "Initial allocation"
+  }
+]

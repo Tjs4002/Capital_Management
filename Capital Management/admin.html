@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel — Capital Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── ADMIN-SPECIFIC STYLES ── */
+        .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .admin-card { background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); transition: all .2s; }
+        .admin-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.08); }
+        
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .card-header-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .card-header h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+        
+        .stats-box { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .stats-box:last-child { border-bottom: none; }
+        .stats-label { font-size: 13px; color: var(--text); }
+        .stats-value { font-size: 18px; font-weight: 700; color: var(--navy); }
+        
+        /* ── USERS MANAGEMENT SECTION STYLES ── */
+        .users-section { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 28px; margin-bottom: 24px; }
+        .users-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 16px; }
+        
+        .filter-bar { background: var(--bg); border-radius: 16px; padding: 16px 20px; border: 1px solid var(--border); margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .filter-input { padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; font-family: Arial, sans-serif; outline: none; transition: .2s; background: var(--card); color: var(--text); }
+        .filter-input:focus { border-color: var(--accent); background: var(--card); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+        .filter-select { padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; background: var(--card); color: var(--text); outline: none; cursor: pointer; transition: .2s; color-scheme: light dark; }
+        .filter-select:focus { border-color: var(--accent); }
+        
+        .users-table-section { background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
+        .table-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .table-data-table { width: 100%; border-collapse: collapse; }
+        .table-data-table thead { background: var(--bg); }
+        .table-data-table th { padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: .5px; }
+        .table-data-table td { padding: 14px 16px; font-size: 13px; color: var(--text); border-top: 1px solid var(--border); }
+        .table-data-table tbody tr:hover { background: var(--bg); }
+        
+        .user-cell { display: flex; align-items: center; gap: 12px; }
+        .user-avatar-table { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--navy2)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+        .user-info-table { display: flex; flex-direction: column; }
+        .user-name-table { font-weight: 600; color: var(--text); }
+        .user-email-table { font-size: 12px; color: var(--muted); }
+        
+        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-inactive { background: #fee2e2; color: #991b1b; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        
+        .role-badge { display: inline-block; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .role-admin { background: #dbeafe; color: #1d4ed8; }
+        .role-manager { background: #fef3c7; color: #92400e; }
+        .role-user { background: #e0e7ff; color: #3730a3; }
+        
+        .action-btn { padding: 6px 12px; border: 1px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: .2s; color: var(--text); }
+        .action-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,.05); }
+        .action-btn.delete:hover { border-color: var(--rose); color: var(--rose); background: rgba(244,63,94,.05); }
+        
+        .btn-primary { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { padding: 10px 18px; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,.05); }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); z-index: 999; align-items: center; justify-content: center; }
+        .modal.open { display: flex; }
+        .modal-content { background: var(--card); border-radius: 16px; padding: 28px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 17px; font-weight: 700; color: var(--text); }
+        .modal-close { background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .form-input, .form-select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; font-family: Arial, sans-serif; background: var(--card); color: var(--text); color-scheme: light dark; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+        
+        .form-actions { display: flex; gap: 10px; margin-top: 24px; }
+        .form-actions button { flex: 1; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-icon { font-size: 48px; color: var(--muted); margin-bottom: 16px; }
+        .empty-text { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+        
+        .stats-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-summary { background: var(--card); border-radius: 12px; padding: 15px; border: 1px solid var(--border); text-align: center; }
+        .stat-number { font-size: 20px; font-weight: 800; color: var(--navy); }
+        .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+        
+        .table-section { background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px; }
+        .table-title { font-weight: 700; font-size: 15px; color: var(--text); }
+        .table-actions { display: flex; gap: 10px; }
+        
+        .data-table { width: 100%; }
+        .data-table thead { background: var(--bg); }
+        .data-table th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: .5px; }
+        .data-table td { padding: 14px 16px; font-size: 13px; color: var(--text); border-top: 1px solid var(--border); }
+        .data-table tr:hover { background: var(--bg); }
+        
+        /* ── NOTIFICATION STYLES ── */
+        .notif-item { border-left: 3px solid #3b82f6; background: #dbeafe; padding: 12px; margin-bottom: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; transition: .2s; user-select: none; }
+        .notif-item:hover { opacity: 0.8; }
+        .notif-item.contact-message { border-left-color: #f59e0b; background: #fef08a; }
+        .notif-item.approved { border-left-color: #10b981; background: #d1fae5; }
+        .notif-item.denied { border-left-color: #ef4444; background: #fee2e2; }
+        .notif-item.read { opacity: 0.6; }
+        .notif-content { flex: 1; }
+        .notif-title { font-weight: 600; font-size: 12px; margin-bottom: 4px; color: var(--text); }
+        .notif-message { font-size: 12px; color: var(--text); margin-bottom: 6px; }
+        .notif-time { font-size: 11px; color: var(--muted); }
+        .notif-actions { display: flex; gap: 6px; margin-left: 8px; }
+        .notif-btn { background: none; border: none; color: var(--text); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 11px; transition: .2s; user-select: none; }
+        .notif-btn:hover { background: rgba(0,0,0,.1); }
+        
+        /* ── DARK MODE NOTIFICATION STYLES ── */
+        :root[data-theme="dark"] .notif-item { background: rgba(59, 130, 246, 0.2); color: var(--text); }
+        :root[data-theme="dark"] .notif-item.contact-message { background: rgba(245, 158, 11, 0.2); border-left-color: #f59e0b; }
+        :root[data-theme="dark"] .notif-item.approved { background: rgba(16, 185, 129, 0.2); border-left-color: #10b981; }
+        :root[data-theme="dark"] .notif-item.denied { background: rgba(239, 68, 68, 0.2); border-left-color: #ef4444; }
+        :root[data-theme="dark"] .notif-btn:hover { background: rgba(255, 255, 255, 0.1); }
+        
+        @media (max-width: 1024px) {
+            .admin-grid { grid-template-columns: 1fr; }
+            .table-section { overflow-x: auto; }
+            .stats-summary { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<script>
+// Check if user is logged in and is admin - redirect if not
+(function checkLogin() {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Check if user is admin
+    const user = JSON.parse(currentUser);
+    if (user.role !== 'Admin') {
+        // Non-admin users cannot access admin panel
+        window.location.href = 'dashboard.html';
+    }
+})();
+
+// Apply saved theme on page load
+(function applyTheme() {
+    const SETTINGS_KEY = 'BudgetMS_settings';
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    const settings = stored ? JSON.parse(stored) : { theme: 'light' };
+    
+    if (settings.theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (settings.theme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (prefersDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+})();
+
+// Update page date dynamically
+document.addEventListener('DOMContentLoaded', function updatePageDate() {
+    const today = new Date();
+    const pageDate = document.getElementById('pageDate');
+    const pageDay = document.getElementById('pageDay');
+    if (pageDate) pageDate.textContent = today.getDate();
+    if (pageDay) pageDay.textContent = today.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+});
+</script>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="logo-text">BudgetMS<span>Management Suite</span></div>
+        </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item">
+        <a href="dashboard.html"><div class="nav-icon"><i class="fa-solid fa-house"></i></div>Dashboard</a>
+    </div>
+    <div class="nav-item">
+        <a href="asset.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Capital Request</a>
+    </div>
+    <div class="nav-item">
+        <a href="capitalmaster.html"><div class="nav-icon"><i class="fa-solid fa-building-columns"></i></div>Capital Master</a>
+    </div>
+    <div class="nav-item">
+        <a href="list.html"><div class="nav-icon"><i class="fa-solid fa-list"></i></div>Records List</a>
+    </div>
+    <div id="adminSection">
+        <div class="nav-section-label">Admin</div>
+        <div class="nav-item active">
+            <a href="admin.html"><div class="nav-icon"><i class="fa-solid fa-shield"></i></div>Admin Panel</a>
+        </div>
+       <!--<div class="nav-item">
+            <a href="users.html"><div class="nav-icon"><i class="fa-solid fa-users"></i></div>Users</a>
+        </div>--> 
+        
+        <div class="nav-item">
+            <a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Settings</a>
+        </div>
+    </div>
+    <div class="nav-item">
+        <a href="aboutus.html"><div class="nav-icon"><i class="fa-solid fa-circle-info"></i></div>About Us</a>
+    </div>
+    <div class="sidebar-bottom">
+        <a href="#" onclick="logout(); return false;" style="color: rgba(255,255,255,.5); text-decoration: none;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+    </div>
+</aside>
+
+<!-- TOPBAR -->
+<div class="topbar" id="topbar">
+    <div class="topbar-title">Admin Panel</div>
+    <div class="search-wrap" style="margin-left: auto; margin-right: 20px;">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" placeholder="Search users, logs...">
+    </div>
+    <div class="topbar-actions">
+        <button class="icon-btn" onclick="openNotificationsModal()" style="position: relative;">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notif-dot" id="notifDotAdmin"></span>
+        </button>
+        <div class="profile-btn" onclick="toggleProfile()">
+            <div class="user-avatar" id="topbarAvatar">A</div>
+            <div class="profile-info">
+                <div class="pname" id="topbarName">Admin</div>
+                <div class="pemail" id="topbarEmail">admin@capital.com</div>
+            </div>
+            <div class="profile-caret"><i class="fa-solid fa-chevron-down"></i></div>
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="dropdown-header">
+                    <div class="dropdown-avatar" id="profileAvatar">A</div>
+                    <div class="dname" id="profileName">Administrator</div>
+                    <div class="demail" id="profileEmail">admin@capital.com</div>
+                </div>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item">
+                        <div class="di-icon di-blue"><i class="fa-solid fa-user"></i></div>
+                        <span>My Profile</span>
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <div class="di-icon di-amber"><i class="fa-solid fa-lock"></i></div>
+                        <span>Change Password</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" onclick="logout(); return false;" class="dropdown-item">
+                        <div class="di-icon di-rose"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+    <div class="page">
+        <!-- WELCOME BANNER -->
+        <div class="welcome-banner">
+            <span class="wb-tag">System Administrator</span>
+            <h1>Welcome back, Admin</h1>
+            <p>Manage users, monitor system activity, and configure application settings</p>
+            <div class="wb-date">
+                <div class="date-num" id="pageDate">12</div>
+                <div class="date-str" id="pageDay">March, 2026</div>
+            </div>
+        </div>
+
+        <!-- ADMIN STATS -->
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon ic-blue"><i class="fa-solid fa-users"></i></div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 4px;" id="statTotalUsers">0</div>
+                <div style="font-size: 13px; color: var(--muted);">Total Users</div>
+            </div>
+            <div class="stat-card gold">
+                <div class="stat-icon ic-gold"><i class="fa-solid fa-user-check"></i></div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 4px;" id="statActiveUsers">0</div>
+                <div style="font-size: 13px; color: var(--muted);">Active Users</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon ic-green"><i class="fa-solid fa-clock"></i></div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 4px;" id="statInactiveUsers">0</div>
+                <div style="font-size: 13px; color: var(--muted);">Inactive Users</div>
+            </div>
+            <div class="stat-card rose">
+                <div class="stat-icon ic-rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 4px;" id="statPendingApprovals">0</div>
+                <div style="font-size: 13px; color: var(--muted);">Pending Approvals</div>
+            </div>
+        </div>
+
+        <!-- OVERVIEW CARDS -->
+        <div class="admin-grid">
+            <!-- SYSTEM STATUS -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-header-icon" style="background: #dbeafe; color: #1d4ed8;"><i class="fa-solid fa-server"></i></div>
+                    <h3>System Status</h3>
+                </div>
+                <div class="stats-box">
+                    <span class="stats-label">Database</span>
+                    <span class="stats-value" style="color: #059669;"><i class="fa-solid fa-circle-check"></i> Healthy</span>
+                </div>
+                <div class="stats-box">
+                    <span class="stats-label">API Server</span>
+                    <span class="stats-value" style="color: #059669;"><i class="fa-solid fa-circle-check"></i> Online</span>
+                </div>
+                <div class="stats-box">
+                    <span class="stats-label">Storage</span>
+                    <span class="stats-value" style="color: #f59e0b;">85% Used</span>
+                </div>
+                <div class="stats-box">
+                    <span class="stats-label">Last Backup</span>
+                    <span class="stats-value" style="font-size: 13px; color: var(--muted);">2 hours ago</span>
+                </div>
+            </div>
+
+            <!-- QUICK ACTIONS -->
+            <div class="admin-card">
+                <div class="card-header">
+                    <div class="card-header-icon" style="background: #fef3c7; color: #d97706;"><i class="fa-solid fa-lightning"></i></div>
+                    <h3>Quick Actions</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="action-btn" style="width: 100%; justify-content: center; border: 1.5px solid var(--accent); color: var(--accent); background: rgba(59,130,246,.05); font-weight: 600;">
+                        <i class="fa-solid fa-download"></i> Export Logs
+                    </button>
+                    <button class="action-btn" style="width: 100%; justify-content: center; border: 1.5px solid var(--accent); color: var(--accent); background: rgba(59,130,246,.05); font-weight: 600;">
+                        <i class="fa-solid fa-shield"></i> Security Scan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- USER MANAGEMENT SECTION -->
+        <div class="users-section">
+            <!-- SECTION HEADER -->
+            <div class="users-section-header">
+                <div>
+                    <h2 style="font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 6px;">User Management</h2>
+                    <p style="font-size: 13px; color: var(--muted);">Manage system users and their permissions</p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn-secondary" onclick="exportToExcel()">
+                        <i class="fa-solid fa-download"></i> Export
+                    </button>
+                    <button class="btn-secondary" onclick="document.getElementById('excelInput').click()">
+                        <i class="fa-solid fa-upload"></i> Import
+                    </button>
+                    <input type="file" id="excelInput" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importFromExcel(event)">
+                </div>
+            </div>
+
+            <!-- STATS SUMMARY -->
+            <div class="stats-summary">
+                <div class="stat-summary">
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-summary">
+                    <div class="stat-number" id="activeUsers">0</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-summary">
+                    <div class="stat-number" id="admins">0</div>
+                    <div class="stat-label">Admins</div>
+                </div>
+                <div class="stat-summary">
+                    <div class="stat-number" id="managers">0</div>
+                    <div class="stat-label">Managers</div>
+                </div>
+            </div>
+
+            <!-- FILTER BAR -->
+            <div class="filter-bar">
+                <input type="text" class="filter-input" id="filterName" placeholder="Filter by name..." style="flex: 1; min-width: 200px;">
+                <select class="filter-select" id="filterRole" style="min-width: 150px;">
+                    <option value="">All Roles</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Manager">Manager</option>
+                    <option value="User">User</option>
+                </select>
+                <select class="filter-select" id="filterStatus" style="min-width: 150px;">
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Pending">Pending</option>
+                </select>
+                <button class="btn-secondary" onclick="resetFilters()">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
+            </div>
+
+            <!-- USERS TABLE -->
+            <div class="users-table-section">
+                <div class="table-header">
+                    <div style="font-weight: 700; font-size: 15px; color: var(--text);">User List</div>
+                    <div style="font-size: 12px; color: var(--muted);" id="userCount">0 users</div>
+                </div>
+                <table class="table-data-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Users will be populated here -->
+                    </tbody>
+                </table>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="empty-text">No users found.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADD/EDIT USER MODAL -->
+        <div class="modal" id="userModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="modalTitle">Add New User</div>
+                    <button class="modal-close" onclick="closeUserModal()">&times;</button>
+                </div>
+                <form id="userForm" onsubmit="handleSaveUser(event)">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="userName" class="form-input" placeholder="Enter full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="userEmail" class="form-input" placeholder="example@capital.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" id="userPhone" class="form-input" placeholder="+91 9876543210 or 9876543210" required>
+                        <small style="color: var(--muted); margin-top: 4px; display: block;">Format: +91 XXXXXXXXXX or XXXXXXXXXX (10 digits)</small>
+                        <div id="phoneError" style="color: var(--rose); font-size: 12px; margin-top: 4px; display: none;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select id="userRole" class="form-select" required>
+                            <option value="">Select Role</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Manager">Manager</option>
+                            <option value="User">User</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="userStatus" class="form-select" required>
+                            <option value="">Select Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Save User</button>
+                        <button type="button" class="btn-secondary" onclick="closeUserModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Local storage key - shared between admin and users pages
+    const STORAGE_KEY = 'BudgetMS_users';
+    let users = [];
+    let editingIndex = -1;
+
+    // Load data from localStorage on page load
+    window.addEventListener('load', () => {
+        // Verify XLSX library is loaded
+        if (typeof XLSX === 'undefined') {
+            console.warn('XLSX library not loaded. Attempting to reinject script...');
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js';
+            script.async = true;
+            script.onload = () => {
+                console.log('XLSX library loaded successfully');
+            };
+            document.head.appendChild(script);
+        }
+        loadUsersData();
+        renderUsers();
+        updateStats();
+    });
+
+    // Load users from localStorage
+    function loadUsersData() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            users = JSON.parse(stored);
+        } else {
+            users = [];
+        }
+    }
+
+    // Save users to localStorage
+    function saveUsersData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    }
+
+    // Render users table
+    function renderUsers() {
+        const tbody = document.getElementById('usersTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const filterName = document.getElementById('filterName').value.toLowerCase();
+        const filterRole = document.getElementById('filterRole').value;
+        const filterStatus = document.getElementById('filterStatus').value;
+
+        let filtered = users.filter(user => {
+            const matchName = user.name.toLowerCase().includes(filterName);
+            const matchRole = filterRole === '' || user.role === filterRole;
+            const matchStatus = filterStatus === '' || user.status === filterStatus;
+            return matchName && matchRole && matchStatus;
+        });
+
+        document.getElementById('userCount').textContent = `${filtered.length} user${filtered.length !== 1 ? 's' : ''}`;
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        emptyState.style.display = 'none';
+        tbody.innerHTML = filtered.map((user, index) => {
+            const statusClass = `status-${user.status.toLowerCase()}`;
+            const roleClass = `role-${user.role.toLowerCase()}`;
+            const avatar = user.name.split(' ').map(n => n[0]).join('');
+            return `
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar-table">${avatar}</div>
+                            <div class="user-info-table">
+                                <div class="user-name-table">${user.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${user.email}</td>
+                    <td><span class="role-badge ${roleClass}">${user.role}</span></td>
+                    <td><span class="status-badge ${statusClass}">${user.status}</span></td>
+                    <td>${user.joinedDate}</td>
+                    <td>
+                        <button class="action-btn" onclick="editUser(${users.indexOf(user)})"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="action-btn delete" onclick="deleteUser(${users.indexOf(user)})"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Open add user modal
+    function openAddUserModal() {
+        editingIndex = -1;
+        document.getElementById('modalTitle').textContent = 'Add New User';
+        document.getElementById('userForm').reset();
+        document.getElementById('phoneError').style.display = 'none';
+        document.getElementById('userModal').classList.add('open');
+    }
+
+    // Open edit user modal
+    function editUser(index) {
+        editingIndex = index;
+        const user = users[index];
+        document.getElementById('modalTitle').textContent = 'Edit User';
+        document.getElementById('userName').value = user.name;
+        document.getElementById('userEmail').value = user.email;
+        document.getElementById('userPhone').value = user.phone;
+        document.getElementById('userRole').value = user.role;
+        document.getElementById('userStatus').value = user.status;
+        document.getElementById('phoneError').style.display = 'none';
+        document.getElementById('userModal').classList.add('open');
+    }
+
+    // Close user modal
+    function closeUserModal() {
+        document.getElementById('userModal').classList.remove('open');
+        editingIndex = -1;
+    }
+
+    // Validate phone number format
+    function validatePhoneNumber(phone) {
+        // Remove spaces for validation
+        const cleanPhone = phone.replace(/\s+/g, '');
+        
+        // Pattern: +91XXXXXXXXXX (12 digits with +91) or XXXXXXXXXX (10 digits)
+        const pattern = /^(\+91\d{10}|\d{10})$/;
+        
+        return pattern.test(cleanPhone);
+    }
+
+    // Handle save user
+    function handleSaveUser(event) {
+        event.preventDefault();
+        
+        const name = document.getElementById('userName').value;
+        const email = document.getElementById('userEmail').value;
+        const phone = document.getElementById('userPhone').value;
+        const role = document.getElementById('userRole').value;
+        const status = document.getElementById('userStatus').value;
+        
+        // Validate phone number
+        if (!validatePhoneNumber(phone)) {
+            const phoneError = document.getElementById('phoneError');
+            phoneError.textContent = '⚠️ Invalid format. Use +91 9876543210 or 9876543210';
+            phoneError.style.display = 'block';
+            return false;
+        } else {
+            document.getElementById('phoneError').style.display = 'none';
+        }
+
+        if (editingIndex === -1) {
+            // Add new user
+            const newUser = {
+                id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
+                name,
+                email,
+                phone,
+                role,
+                status,
+                joinedDate: new Date().toISOString().split('T')[0]
+            };
+            users.push(newUser);
+        } else {
+            // Update existing user
+            users[editingIndex] = { ...users[editingIndex], name, email, phone, role, status };
+        }
+
+        saveUsersData();
+        renderUsers();
+        updateStats();
+        closeUserModal();
+        alert('✓ User saved successfully');
+    }
+
+    // Delete user
+    function deleteUser(index) {
+        if (confirm(`Are you sure you want to delete ${users[index].name}?`)) {
+            users.splice(index, 1);
+            saveUsersData();
+            renderUsers();
+            updateStats();
+        }
+    }
+
+    // Update statistics
+    function updateStats() {
+        const total = users.length;
+        const active = users.filter(u => u.status === 'Active').length;
+        const inactive = users.filter(u => u.status !== 'Active').length;
+        const admins = users.filter(u => u.role === 'Admin').length;
+        const managers = users.filter(u => u.role === 'Manager').length;
+        
+        // Get pending approvals from records
+        const allRecords = JSON.parse(localStorage.getItem('capitalRecords') || '[]');
+        const pending = allRecords.filter(r => r.status === 'Pending').length;
+
+        // Update old stat elements
+        document.getElementById('totalUsers').textContent = total;
+        document.getElementById('activeUsers').textContent = active;
+        document.getElementById('admins').textContent = admins;
+        document.getElementById('managers').textContent = managers;
+        
+        // Update new stat card elements
+        document.getElementById('statTotalUsers').textContent = total;
+        document.getElementById('statActiveUsers').textContent = active;
+        document.getElementById('statInactiveUsers').textContent = inactive;
+        document.getElementById('statPendingApprovals').textContent = pending;
+    }
+
+    // Reset filters
+    function resetFilters() {
+        document.getElementById('filterName').value = '';
+        document.getElementById('filterRole').value = '';
+        document.getElementById('filterStatus').value = '';
+        renderUsers();
+    }
+
+    // Event listeners for filters
+    document.getElementById('filterName').addEventListener('input', renderUsers);
+    document.getElementById('filterRole').addEventListener('change', renderUsers);
+    document.getElementById('filterStatus').addEventListener('change', renderUsers);
+
+    // Export to Excel with retry logic
+    function exportToExcel() {
+        // Check if XLSX is available, if not wait and retry
+        if (typeof XLSX === 'undefined') {
+            console.log('XLSX not ready yet, waiting...');
+            setTimeout(() => {
+                if (typeof XLSX === 'undefined') {
+                    alert('Export failed: XLSX library could not be loaded. Please refresh and try again.');
+                    return;
+                }
+                performExport();
+            }, 1000);
+            return;
+        }
+        performExport();
+    }
+
+    function performExport() {
+        try {
+            // Filter out demo users before exporting
+            const realUsers = users.filter(u => !u.email.endsWith('@capital.com'));
+            if (realUsers.length === 0) {
+                alert('No real users to export.');
+                return;
+            }
+            
+            // Get current date and time
+            const now = new Date();
+            const exportDate = now.toLocaleDateString('en-IN'); // DD/MM/YYYY format for India
+            const exportTime = now.toLocaleTimeString('en-IN'); // HH:MM:SS format
+            
+            // Create workbook and add users data directly
+            const ws = XLSX.utils.json_to_sheet(realUsers);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Users');
+            
+            // Add export info below the data
+            const lastRow = realUsers.length + 2;
+            ws[`A${lastRow}`] = `Export Date: ${exportDate}`;
+            ws[`B${lastRow}`] = `Export Time: ${exportTime}`;
+            ws[`A${lastRow}`].s = { font: { bold: true, color: { rgb: '0066CC' } } };
+            ws[`B${lastRow}`].s = { font: { bold: true, color: { rgb: '0066CC' } } };
+            
+            // Adjust column widths
+            ws['!cols'] = [
+                { wch: 12 }, // id
+                { wch: 20 }, // name
+                { wch: 25 }, // email
+                { wch: 15 }, // phone
+                { wch: 12 }, // role
+                { wch: 12 }, // status
+                { wch: 12 }  // joinedDate
+            ];
+            
+            XLSX.writeFile(wb, `users_data_${exportDate.replace(/\//g, '-')}_${exportTime.replace(/:/g, '-')}.xlsx`);
+            alert(`✓ Exported to Excel successfully.\nExport Date: ${exportDate}\nExport Time: ${exportTime}`);
+        } catch (err) {
+            alert('Export failed: ' + err.message);
+        }
+    }
+
+    // Import from Excel
+    function importFromExcel(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                // Validate and merge data (ignore demo users)
+                const importedUsers = jsonData
+                    .map((row, idx) => ({
+                        id: row.id || Math.max(...users.map(u => u.id), 0) + idx + 1,
+                        name: row.name || '',
+                        email: row.email || '',
+                        phone: row.phone || '',
+                        role: row.role || 'User',
+                        status: row.status || 'Active',
+                        joinedDate: row.joinedDate || new Date().toISOString().split('T')[0]
+                    }))
+                    .filter(u => u.name && u.email && !u.email.endsWith('@capital.com'));
+
+                if (importedUsers.length === 0) {
+                    alert('No valid users found in the file');
+                    return;
+                }
+
+                // Merge with existing users (update if email exists, add if new)
+                importedUsers.forEach(newUser => {
+                    const existingIndex = users.findIndex(u => u.email === newUser.email);
+                    if (existingIndex !== -1) {
+                        users[existingIndex] = newUser;
+                    } else {
+                        users.push(newUser);
+                    }
+                });
+
+                saveUsersData();
+                renderUsers();
+                updateStats();
+                alert(`Successfully imported ${importedUsers.length} user(s)`);
+            } catch (error) {
+                alert('Error reading file: ' + error.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        event.target.value = '';
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('userModal').addEventListener('click', (e) => {
+        if (e.target.id === 'userModal') closeUserModal();
+    });
+
+    // Load user info from localStorage and check role
+    function loadUserInfo() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {
+            name: 'Admin',
+            email: 'admin@capital.com',
+            role: 'Admin'
+        };
+        
+        // Update topbar
+        document.getElementById('topbarAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+        document.getElementById('topbarName').textContent = currentUser.name;
+        document.getElementById('topbarEmail').textContent = currentUser.email;
+        
+        // Update profile dropdown
+        document.getElementById('profileAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+        document.getElementById('profileName').textContent = currentUser.name;
+        document.getElementById('profileEmail').textContent = currentUser.email;
+        
+        // Show/hide admin section based on role
+        const adminSection = document.getElementById('adminSection');
+        if (adminSection && currentUser.role !== 'Admin') {
+            adminSection.style.display = 'none';
+        }
+    }
+
+    // Profile dropdown toggle
+    function toggleProfile() {
+        const dropdown = document.getElementById('profileDropdown');
+        dropdown.classList.toggle('open');
+    }
+    
+    function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+    }
+    
+    // Load user info on page load
+    document.addEventListener('DOMContentLoaded', loadUserInfo);
+    document.addEventListener('DOMContentLoaded', renderNotificationsAdmin);
+
+    // Close profile dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const profileBtn = document.querySelector('.profile-btn');
+        const dropdown = document.getElementById('profileDropdown');
+        if (!profileBtn.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    // ── NOTIFICATION FUNCTIONS ──
+    function openNotificationsModal() {
+        document.getElementById('notificationsListModal').style.display = 'flex';
+        renderNotificationsListAdmin();
+    }
+
+    function closeNotificationsModal() {
+        document.getElementById('notificationsListModal').style.display = 'none';
+    }
+
+    function renderNotificationsListAdmin() {
+        const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        const container = document.getElementById('notificationsListContainer');
+        const notifDot = document.getElementById('notifDotAdmin');
+        
+        // Filter to show only contact messages (exclude admin's own replies)
+        const adminNotifications = userNotifications.filter(n => n.type === 'contact-message');
+        
+        // Filter unread notifications
+        const unreadNotifs = adminNotifications.filter(n => !n.read);
+        
+        // Only show red dot if there are unread notifications
+        if (unreadNotifs.length > 0) {
+            notifDot.textContent = unreadNotifs.length;
+            notifDot.style.display = 'inline-flex';
+            notifDot.style.alignItems = 'center';
+            notifDot.style.justifyContent = 'center';
+            notifDot.style.fontSize = '10px';
+            notifDot.style.color = 'white';
+            notifDot.style.fontWeight = '600';
+        } else {
+            notifDot.style.display = 'none';
+        }
+        
+        if (!adminNotifications.length) {
+            container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No messages yet.</p>';
+            return;
+        }
+        
+        container.innerHTML = adminNotifications.slice().reverse().map((n, idx) => {
+            let bgClass = 'contact-message';
+            const readClass = n.read ? 'read' : '';
+            const messagePreview = (n.message || '').substring(0, 50) + ((n.message || '').length > 50 ? '...' : '');
+            return '<div class="notif-item ' + bgClass + ' ' + readClass + '" onclick="openNotificationDetail(\'' + n._id + '\')" style="cursor: pointer;"><div class="notif-content"><div class="notif-title">' + (n.title || 'Notification') + '</div><div class="notif-message">' + messagePreview + '</div><div class="notif-time">' + (n.timestamp || 'just now') + '</div></div><div class="notif-actions" onclick="event.stopPropagation();"><button class="notif-btn" onclick="deleteNotificationAdmin(\'' + n._id + '\')" title="Delete"><i class="fa-solid fa-trash" style="color: #ef4444;"></i></button></div></div>';
+        }).join('');
+    }
+
+    function openNotificationDetail(notificationId) {
+        const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        const notification = userNotifications.find(n => n._id === notificationId);
+        
+        if (!notification) return;
+        
+        // Populate detail modal
+        document.getElementById('detailFrom').textContent = notification.contactName || 'Unknown';
+        document.getElementById('detailEmail').textContent = notification.contactEmail || 'N/A';
+        document.getElementById('detailDate').textContent = notification.timestamp || 'N/A';
+        document.getElementById('detailMessage').textContent = notification.message || 'No message content';
+        document.getElementById('replyMessage').value = '';
+        
+        // Store current notification ID for reply
+        document.getElementById('currentNotificationId').value = notificationId;
+        
+        // Mark as read
+        notification.read = true;
+        localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+        
+        // Show detail modal and hide list modal
+        document.getElementById('notificationsListModal').style.display = 'none';
+        document.getElementById('notificationDetailModal').style.display = 'flex';
+        
+        renderNotificationsListAdmin();
+    }
+
+    function goBackToNotificationsList() {
+        document.getElementById('notificationDetailModal').style.display = 'none';
+        document.getElementById('notificationsListModal').style.display = 'flex';
+    }
+
+    function sendReplyToUser() {
+        const replyText = document.getElementById('replyMessage').value.trim();
+        const userNotificationId = document.getElementById('currentNotificationId').value;
+        
+        if (!replyText) {
+            alert('Please type a reply message');
+            return;
+        }
+        
+        const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        const originalNotif = userNotifications.find(n => n._id === userNotificationId);
+        
+        if (!originalNotif) {
+            alert('Notification not found');
+            return;
+        }
+        
+        // Create a reply notification for the user
+        const replyNotification = {
+            _id: Date.now().toString(),
+            type: 'contact-reply',
+            title: 'Reply from Admin',
+            message: replyText,
+            toEmail: originalNotif.contactEmail,
+            linkedContactMessageId: userNotificationId,
+            fromAdmin: true,
+            timestamp: new Date().toLocaleString(),
+            read: false
+        };
+        
+        // Store reply in separate 'contactReplies' location (will be seen only by user, not admin)
+        let contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+        contactReplies.push(replyNotification);
+        localStorage.setItem('contactReplies', JSON.stringify(contactReplies));
+        
+        // Clear reply box
+        document.getElementById('replyMessage').value = '';
+        
+        alert('✓ Reply sent to user');
+        
+        // Go back to list
+        goBackToNotificationsList();
+    }
+
+    function renderNotificationsAdmin() {
+        renderNotificationsListAdmin();
+    }
+
+    function deleteNotificationAdmin(notificationId) {
+        const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        const filtered = userNotifications.filter(n => n._id !== notificationId);
+        localStorage.setItem('userNotifications', JSON.stringify(filtered));
+        renderNotificationsListAdmin();
+    }
+
+    function clearAllNotificationsAdmin() {
+        if (confirm('Clear all notifications?')) {
+            localStorage.setItem('userNotifications', JSON.stringify([]));
+            renderNotificationsListAdmin();
+        }
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+        const listModal = document.getElementById('notificationsListModal');
+        const detailModal = document.getElementById('notificationDetailModal');
+        
+        if (e.target === listModal) {
+            listModal.style.display = 'none';
+        }
+        if (e.target === detailModal) {
+            detailModal.style.display = 'none';
+        }
+    });
+</script>
+
+<!-- NOTIFICATIONS LIST MODAL -->
+<div class="modal" id="notificationsListModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); z-index: 999; align-items: center; justify-content: center;">
+    <div class="modal-content" style="background: var(--card); border-radius: 16px; padding: 28px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,.2); max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="font-size: 17px; font-weight: 700; color: var(--text);">Messages</div>
+            <button onclick="closeNotificationsModal()" style="background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer;"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div id="notificationsListContainer" style="max-height: 500px; overflow-y: auto;">
+            <p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No notifications yet.</p>
+        </div>
+    </div>
+</div>
+
+<!-- NOTIFICATION DETAIL & REPLY MODAL -->
+<div class="modal" id="notificationDetailModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="modal-content" style="background: var(--card); border-radius: 16px; padding: 28px; width: 90%; max-width: 600px; box-shadow: 0 20px 50px rgba(0,0,0,.2); max-height: 80vh; overflow-y: auto;">
+        <input type="hidden" id="currentNotificationId" value="">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="font-size: 17px; font-weight: 700; color: var(--text);">Message Details</div>
+            <button onclick="goBackToNotificationsList()" style="background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer;"><i class="fa-solid fa-times"></i></button>
+        </div>
+        
+        <div id="notificationDetails" style="background: var(--bg); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;">FROM</div>
+                <div id="detailFrom" style="font-size: 14px; font-weight: 600; color: var(--navy);"></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;">EMAIL</div>
+                <div id="detailEmail" style="font-size: 14px; color: var(--accent);"></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;">DATE</div>
+                <div id="detailDate" style="font-size: 14px; color: var(--text);"></div>
+            </div>
+            <div>
+                <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;">MESSAGE</div>
+                <div id="detailMessage" style="font-size: 14px; color: var(--text); white-space: pre-wrap; line-height: 1.5;"></div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Reply to User</div>
+            <textarea id="replyMessage" placeholder="Type your reply here..." style="width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; font-family: Arial, sans-serif; background: var(--card); color: var(--text); outline: none; resize: vertical; min-height: 100px;" onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'" onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button onclick="sendReplyToUser()" style="flex: 1; padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='var(--accent)'"><i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i>Send Reply</button>
+            <button onclick="goBackToNotificationsList()" style="flex: 1; padding: 10px 20px; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .2s;">Back</button>
+        </div>
+    </div>
+</div>
+
+<!-- Load XLSX library at the end to ensure it's available -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</html>
+fg

@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital Management — Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+  <style>
+        /* ── EXTRA STYLES FOR THE TWO NEW FULL-WIDTH TABLE SECTIONS ── */
+        .full-section {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 24px;
+            animation: fadeUp .5s ease both;
+        }
+        .full-section .sc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .full-section .sc-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .sc-icon {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px;
+        }
+        .empty-row td {
+            text-align: center;
+            color: var(--muted);
+            padding: 30px !important;
+            font-size: 13px;
+        }
+        .empty-row a { color: var(--accent); text-decoration: none; font-weight: 600; }
+        .badge-inactive { background: #fee2e2; color: #991b1b; }
+        .amt-green { color: #059669; font-weight: 600; }
+        .amt-red   { color: #e11d48; font-weight: 600; }
+        .amt-blue  { color: #0369a1; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<script>
+// Check if user is logged in - redirect to login if not
+(function checkLogin() {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+        window.location.href = 'login.html';
+    }
+})();
+
+// Apply saved theme on page load
+(function applyTheme() {
+    const SETTINGS_KEY = 'BudgetMS_settings';
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    const settings = stored ? JSON.parse(stored) : { theme: 'light' };
+    
+    if (settings.theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (settings.theme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (prefersDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+})();
+</script>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-mark">
+            <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="logo-text">BudgetMS<span>Management Suite</span></div>
+        </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active">
+        <a href="dashboard.html"><div class="nav-icon"><i class="fa-solid fa-house"></i></div>Dashboard</a>
+    </div>
+    <div class="nav-item">
+        <a href="asset.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Capital Request<span class="nav-badge" id="assetCount"></span></a>
+    </div>
+    <div class="nav-item">
+        <a href="capitalmaster.html"><div class="nav-icon"><i class="fa-solid fa-building-columns"></i></div>Capital Master<span class="nav-badge" id="capCount"></span></a>
+    </div>
+    <div class="nav-item">
+        <a href="list.html"><div class="nav-icon"><i class="fa-solid fa-list"></i></div>Records List</a>
+    </div>
+    <div class="nav-item">
+        <a href="aboutus.html"><div class="nav-icon"><i class="fa-solid fa-circle-info"></i></div>About Us</a>
+    </div>
+    <div class="sidebar-bottom">
+        <a href="#" onclick="openModal('contactModal')"><i class="fa-solid fa-headset"></i> Contact Support</a>
+    </div>
+</aside>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')"><i class="fa-solid fa-bars"></i></button>
+    <div class="topbar-title"><i class="fa-solid fa-house" style="color:var(--navy);margin-right:6px;"></i>Dashboard</div>
+    <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" placeholder="Search records, assets…" id="globalSearch" oninput="handleSearch(this.value)">
+    </div>
+    <div class="topbar-actions">
+        <div class="profile-btn" onclick="toggleProfileMenu()" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(59,130,246,.1); border-radius: 10px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #052377, #3b82f6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px;" id="userAvatarDash">A</div>
+            <div style="display: flex; flex-direction: column; min-width: 100px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--navy);" id="userNameDash">Admin</div>
+                <div style="font-size: 11px; color: var(--muted);" id="userRoleDash">Admin</div>
+            </div>
+            <i class="fa-solid fa-chevron-down" style="font-size: 12px; color: var(--muted);"></i>
+        </div>
+        <div class="profile-dropdown" id="profileDropdownDash" style="position: absolute; top: 60px; right: 20px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,.1); display: none; z-index: 100; min-width: 220px;">
+            <div style="padding: 16px; border-bottom: 1px solid var(--border);">
+                <div style="font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 3px;" id="dropdownUserName">Administrator</div>
+                <div style="font-size: 11px; color: var(--muted);" id="dropdownUserEmail">admin@capital.com</div>
+            </div>
+            <div style="padding: 8px;">
+                <a href="#" onclick="openModal('profileModal'); return false;" style="display: flex; align-items: center; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: 8px; transition: .2s; font-size: 12px;">
+                    <i class="fa-solid fa-user" style="width: 16px; color: #3b82f6;"></i>
+                    <span>My Profile</span>
+                </a>
+                <a href="settings.html" style="display: flex; align-items: center; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: 8px; transition: .2s; font-size: 12px;">
+                    <i class="fa-solid fa-sliders" style="width: 16px; color: #f59e0b;"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="admin.html" id="adminLinkDash" style="display: flex; align-items: center; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: 8px; transition: .2s; font-size: 12px; display: none;">
+                    <i class="fa-solid fa-shield" style="width: 16px; color: #ef4444;"></i>
+                    <span>Admin Panel</span>
+                </a>
+                <div style="height: 1px; background: var(--border); margin: 8px 0;"></div>
+                <a href="#" onclick="logout(); return false;" style="display: flex; align-items: center; gap: 10px; padding: 10px; color: #ef4444; text-decoration: none; border-radius: 8px; transition: .2s; font-size: 12px;">
+                    <i class="fa-solid fa-arrow-right-from-bracket" style="width: 16px;"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+<div class="page">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner" style="background:linear-gradient(135deg,#1e3a4c 0%,#2a5566 60%,#37748f 100%);margin-bottom:24px;">
+        <div class="wb-date">
+            <div class="date-num" id="pageDate">14</div>
+            <div class="date-str" id="pageDay">Mar 2026</div>
+        </div>
+        <div style="position:relative;">
+            <div class="wb-tag" style="background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.35);color:#6ee7b7;">DASHBOARD</div>
+            <h1 style="color:#a7f3d0;margin-bottom:6px;">Welcome to Budget Management</h1>
+            <p style="color:rgba(167,243,208,.6);font-size:14px;">Manage your capital, assets, and records with ease in one unified platform.</p>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-change up">Live</div>
+            <div class="stat-icon ic-blue"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="stat-num" id="statTotal">0</div>
+            <div class="stat-label">Total Records</div>
+        </div>
+
+        <div class="stat-card green">
+            <div class="stat-change up">Asset</div>
+            <div class="stat-icon ic-green"><i class="fa-solid fa-box"></i></div>
+            <div class="stat-num" id="statAsset">0</div>
+            <div class="stat-label">capital Requests</div>
+        </div>
+
+        <div class="stat-card emerald">
+            <div class="stat-change up">Active</div>
+            <div class="stat-icon ic-emerald"><i class="fa-solid fa-check-circle"></i></div>
+            <div class="stat-num" id="statActive">0</div>
+            <div class="stat-label">Active Records</div>
+        </div>
+
+    </div>
+
+    <!-- NOTIFICATIONS SECTION -->
+    <div class="section-card" style="margin-bottom:24px; border-left:4px solid #3b82f6;">
+        <div class="sc-header">
+            <div class="sc-title">
+                <i class="fa-solid fa-bell" style="background:#dbeafe;color:#1d4ed8;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;"></i>
+                Recent Notifications
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span id="unreadNotifCount" style="background:#ef4444;color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;"></span>
+            </div>
+        </div>
+        
+        <!-- Two Column Layout -->
+        <div style="display:flex; gap:16px; padding:16px;">
+            <!-- Capital Request Notifications -->
+            <div style="flex:1; border-right:1px solid var(--border); padding-right:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+                    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Capital Requests</div>
+                    <button onclick="clearAssetNotifications()" style="background:#fbbf24;color:#78350f;border:none;padding:4px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#f59e0b';" onmouseout="this.style.background='#fbbf24';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Clear</button>
+                </div>
+                <div id="assetNotificationsContainer" style="max-height:300px; overflow-y:auto;">
+                    <p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No Capital requests yet.</p>
+                </div>
+            </div>
+            
+            <!-- Message Notifications -->
+            <div style="flex:1;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+                    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Messages</div>
+                    <button onclick="clearMessageNotifications()" style="background:#fbbf24;color:#78350f;border:none;padding:4px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#f59e0b';" onmouseout="this.style.background='#fbbf24';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Clear</button>
+                </div>
+                <div id="messageNotificationsContainer" style="max-height:300px; overflow-y:auto;">
+                    <p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No messages yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECENT RECORDS — FULL WIDTH -->
+    <div class="full-section">
+        <div class="sc-header">
+            <div class="sc-title">
+                <i class="fa-solid fa-clock-rotate-left" style="background:#dbeafe;color:#1d4ed8;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;"></i>
+                Recent Records
+            </div>
+            <a href="list.html" class="sc-link">View All →</a>
+        </div>
+        <div style="overflow-x:auto; max-height: 500px; overflow-y: auto;">
+            <table class="mini-table">
+                <thead>
+                    <tr><th>ID</th><th>Type</th><th>Category</th><th>Status</th><th>Date</th></tr>
+                </thead>
+                <tbody id="recentTableBody">
+                    <tr class="empty-row"><td colspan="5">No records yet. <a href="capitalmaster.html">Add one →</a></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FUND UTILIZATION + ACTIVITY + TYPE BREAKDOWN -->
+    <div class="grid-3">
+        <div class="section-card">
+            <div class="sc-header">
+                <div class="sc-title"><i class="fa-solid fa-indian-rupee-sign" style="background:#d1fae5;color:#059669;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;"></i>Fund Utilization</div>
+            </div>
+            <div class="fund-bars" id="fundBars"><div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No capital data yet.</div></div>
+        </div>
+        <div class="section-card">
+            <div class="sc-header">
+                <div class="sc-title"><i class="fa-solid fa-rss" style="background:#fee2e2;color:#e11d48;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;"></i>Activity Feed</div>
+            </div>
+            <div class="activity-list" id="activityFeed">
+                <div class="activity-item">
+                    <div class="act-dot" style="background:#dbeafe;color:#1d4ed8;"><i class="fa-solid fa-circle-info"></i></div>
+                    <div class="act-info"><div class="act-title">System Ready</div><div class="act-sub">Dashboard initialized</div></div>
+                    <div class="act-time">now</div>
+                </div>
+            </div>
+        </div>
+        <div class="section-card">
+            <div class="sc-header">
+                <div class="sc-title"><i class="fa-solid fa-chart-bar" style="background:#ede9fe;color:#7c3aed;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;"></i>Capital by Type</div>
+            </div>
+            <div style="padding:16px;" id="typeBreakdown"><div style="text-align:center;color:var(--muted);font-size:13px;padding:20px;">No data yet.</div></div>
+        </div>
+    </div>
+
+    <!-- ✅ ASSET MASTER — ALL REQUESTS -->
+    <div class="full-section">
+        <div class="sc-header">
+            <div class="sc-title">
+                <span class="sc-icon" style="background:#d1fae5;color:#059669;"><i class="fa-solid fa-box"></i></span>
+                Capital Requests — All Requests
+            </div>
+            <a href="asset.html" class="sc-link">+ New Request →</a>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ID</th>
+                        <th>Capital Type</th>
+                        <th>Details</th>
+                        <th>Date</th>
+                        <th>Quantity</th>
+                        <th>Allocated Fund</th>
+                        <th>Required Fund</th>
+                        <th>Remaining Fund</th>
+                        <th>Status</th>
+                        <th>Requester Remarks</th>
+                        <th>Capital Master Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="assetTableBody">
+                    <tr class="empty-row"><td colspan="12">No Capital requests yet. <a href="asset.html">Submit one →</a></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="about-footer">
+        &#169; 2026 Budget Management System
+    </div>
+
+</div>
+</main>
+
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="profileModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-user"></i></div><div><h3>User Profile</h3><p>Your account information</p></div></div>
+        <div class="modal-body">
+            <div style="text-align:center;margin-bottom:18px;">
+                <div id="userAvatar" style="width:70px;height:70px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:white;box-shadow:0 6px 16px rgba(245,158,11,.35);">AR</div>
+                <div id="userName" style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;">Aryan Rao</div>
+                <div id="userRole" style="font-size:12px;color:var(--muted);">User</div>
+            </div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-envelope" style="color:var(--accent);margin-right:6px;"></i>Email</div><div id="userEmail" class="modal-info-val">aryan@company.com</div></div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-user" style="color:var(--emerald);margin-right:6px;"></i>Username</div><div id="userUsername" class="modal-info-val">aryan</div></div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-calendar" style="color:var(--gold);margin-right:6px;"></i>Login Time</div><div id="userLoginTime" class="modal-info-val">-</div></div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="handleLogout()"><i class="fa-solid fa-sign-out-alt"></i> Logout</button><button class="btn-primary" onclick="closeModal('profileModal')">Close</button></div>
+    </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-headset"></i></div><div><h3>Contact Support</h3><p>We'll get back to you shortly</p></div></div>
+        <div class="modal-body">
+            <div class="modal-field"><label>Your Name</label><input type="text" id="contactName" name="contactName" placeholder="Enter your full name" required></div>
+            <div class="modal-field"><label>Email</label><input type="email" id="contactEmail" name="contactEmail" placeholder="Enter your email address" required></div>
+            <div class="modal-field"><label>Message</label><textarea rows="4" id="contactMessage" name="contactMessage" placeholder="Describe your issue or question…"></textarea></div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:12.5px;color:var(--muted);">
+                <div><i class="fa-solid fa-phone" style="color:var(--navy);margin-right:5px;"></i>+91 98765 43210</div>
+                <div><i class="fa-solid fa-envelope" style="color:var(--navy);margin-right:5px;"></i>support@budgetms.com</div>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('contactModal')">Cancel</button><button class="btn-primary" onclick="validateAndSendContactForm()"><i class="fa-solid fa-paper-plane"></i> Send Message</button></div>
+    </div>
+</div>
+
+<!-- CONTACT MESSAGE DETAIL MODAL -->
+<div class="modal-overlay" id="contactMessageModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-envelope-open"></i></div><div><h3>Contact Message</h3><p>View and reply to user message</p></div></div>
+        <div class="modal-body" style="max-height:500px;overflow-y:auto;">
+            <div id="contactMessageDetails" style="background:#f8f9fa;padding:14px;border-radius:10px;margin-bottom:18px;font-size:12px;">
+                <div style="margin-bottom:12px;"><strong style="color:var(--muted);">From:</strong><br><span id="msgFromName" style="color:var(--navy);font-weight:600;">-</span></div>
+                <div style="margin-bottom:12px;"><strong style="color:var(--muted);">Email:</strong><br><span id="msgFromEmail" style="color:var(--accent);">-</span></div>
+                <div style="margin-bottom:12px;"><strong style="color:var(--muted);">Date:</strong><br><span id="msgTimestamp" style="color:var(--text);">-</span></div>
+                <div><strong style="color:var(--muted);">Message:</strong><br><span id="msgContent" style="color:var(--text);display:block;margin-top:6px;white-space:pre-wrap;"></span></div>
+            </div>
+            <div id="repliesContainer" style="margin-bottom:18px;"></div>
+            <div style="margin-bottom:16px;border-top:1px solid var(--border);padding-top:16px;">
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;">Your Reply</label>
+                <textarea id="replyMessage" placeholder="Type your reply here…" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;resize:vertical;min-height:100px;font-family:Arial,sans-serif;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';"></textarea>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('contactMessageModal')">Close</button><button class="btn-primary" onclick="sendReplyToUser()"><i class="fa-solid fa-paper-plane"></i> Send Reply</button></div>
+    </div>
+</div>
+
+<!-- USER REPLY TO ADMIN MODAL -->
+<div class="modal-overlay" id="userReplyToAdminModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-reply"></i></div><div><h3>Reply to Admin</h3><p>Respond to admin's message</p></div></div>
+        <div class="modal-body" style="max-height:500px;overflow-y:auto;">
+            <div id="adminReplyDetail" style="background:#f8f9fa;padding:14px;border-radius:10px;margin-bottom:18px;font-size:12px;">
+                <div style="margin-bottom:12px;"><strong style="color:var(--muted);">Admin's Reply:</strong></div>
+                <div style="background:#d1fae5;border-left:3px solid #10b981;padding:10px;border-radius:6px;margin-bottom:12px;">
+                    <div id="adminReplyContent" style="color:var(--text);white-space:pre-wrap;margin-bottom:6px;">—</div>
+                    <div id="adminReplyTimestamp" style="font-size:11px;color:var(--muted);">—</div>
+                </div>
+            </div>
+            <div style="margin-bottom:16px;border-top:1px solid var(--border);padding-top:16px;">
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;">Your Reply</label>
+                <textarea id="userReplyText" placeholder="Type your response to admin…" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;resize:vertical;min-height:100px;font-family:Arial,sans-serif;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';"></textarea>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('userReplyToAdminModal')">Close</button><button class="btn-primary" onclick="sendReplyToAdmin()"><i class="fa-solid fa-paper-plane"></i> Send Reply</button></div>
+    </div>
+</div>
+
+<!-- ADMIN VIEW USER REPLY MODAL -->
+<div class="modal-overlay" id="adminViewUserReplyModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-message"></i></div><div><h3>User Reply</h3><p>View and reply to user response</p></div></div>
+        <div class="modal-body" style="max-height:500px;overflow-y:auto;">
+            <div id="userReplyDetail" style="background:#f8f9fa;padding:14px;border-radius:10px;margin-bottom:18px;font-size:12px;">
+                <div style="margin-bottom:12px;"><strong style="color:var(--muted);">From:</strong><br><span id="viewUserReplyFrom" style="color:var(--navy);font-weight:600;">—</span></div>
+                <div style="margin-bottom:12px;"><strong style="color:var(--muted);">Date:</strong><br><span id="viewUserReplyTimestamp" style="color:var(--text);">—</span></div>
+                <div style="margin-bottom:12px;"><strong style="color:var(--muted);">User's Message:</strong></div>
+                <div style="background:#dbeafe;border-left:3px solid #3b82f6;padding:10px;border-radius:6px;margin-bottom:12px;">
+                    <div id="viewUserReplyContent" style="color:var(--text);white-space:pre-wrap;">—</div>
+                </div>
+            </div>
+            <div style="margin-bottom:16px;border-top:1px solid var(--border);padding-top:16px;">
+                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;">Your Reply</label>
+                <textarea id="adminReplyToUserText" placeholder="Type your reply to user…" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;resize:vertical;min-height:100px;font-family:Arial,sans-serif;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';"></textarea>
+                <input type="hidden" id="currentUserReplyId" value="">
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('adminViewUserReplyModal')">Close</button><button class="btn-primary" onclick="adminReplyToUserAgain()"><i class="fa-solid fa-paper-plane"></i> Send Reply</button></div>
+    </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal-box">
+        <div class="modal-head"><div class="modal-head-icon"><i class="fa-solid fa-right-to-bracket"></i></div><div><h3>Login Options</h3><p>Session & authentication settings</p></div></div>
+        <div class="modal-body">
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-user" style="color:var(--accent);margin-right:6px;"></i>Logged in as</div><div class="modal-info-val">Aryan Rao</div></div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-solid fa-clock" style="color:var(--gold);margin-right:6px;"></i>Session</div><div class="modal-info-val" id="sessionTime">Active</div></div>
+            <div class="modal-info-row"><div class="modal-info-label"><i class="fa-brands fa-microsoft" style="color:#0078d4;margin-right:6px;"></i>Auth Method</div><div class="modal-info-val">Microsoft SSO</div></div>
+            <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+                <a href="login.html" class="btn-primary" style="text-align:center;text-decoration:none;border-radius:9px;display:block;padding:9px;"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                <button class="btn-cancel" onclick="closeModal('loginModal')">Stay Logged In</button>
+            </div>
+        </div>
+        <div class="modal-foot" style="display:none;"></div>
+    </div>
+</div>
+
+<script>
+/* ─────────────── GET DATA ─────────────── */
+function getRecords() {
+    var c = JSON.parse(localStorage.getItem('capitalRecords') || '[]');
+    var a = JSON.parse(localStorage.getItem('assetRecords')   || '[]');
+    return { capitals: c, assets: a, all: c.concat(a) };
+}
+
+/* ─────────────── STAT CARDS ─────────────── */
+function renderStats() {
+    var d = getRecords();
+    var active = d.capitals.filter(function(r){ return r.status === 'Active'; }).length;
+    document.getElementById('statTotal').textContent   = d.all.length;
+    document.getElementById('statAsset').textContent   = d.assets.length;
+    document.getElementById('statActive').textContent  = active;
+    document.getElementById('assetCount').textContent  = d.assets.length   || '';
+}
+
+/* ─────────────── NOTIFICATIONS ─────────────── */
+function renderNotifications() {
+    renderAssetNotifications();
+    renderMessageNotifications();
+    updateUnreadCount();
+}
+
+/* ─────────────── ASSET NOTIFICATIONS ─────────────── */
+function renderAssetNotifications() {
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const container = document.getElementById('assetNotificationsContainer');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User' };
+    
+    // Filter asset-related notifications
+    let assetNotifs = [];
+    if (currentUser.role !== 'Admin') {
+        assetNotifs = userNotifications.filter(n => 
+            (n.requesterEmail === currentUser.email) &&
+            (n.type.includes('approved') || n.type.includes('denied') || n.type === 'asset-request')
+        );
+    } else {
+        assetNotifs = userNotifications.filter(n => 
+            (n.type.includes('approved') || n.type.includes('denied') || n.type === 'asset-request')
+        );
+    }
+    
+    if (!assetNotifs.length) {
+        container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No capital requests yet.</p>';
+        return;
+    }
+    
+    container.innerHTML = assetNotifs.slice(-5).reverse().map((n, i) => {
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        let bgColor = isDarkMode ? '#1e3a8a' : '#dbeafe';
+        let borderColor = '#3b82f6';
+        let textColor = isDarkMode ? '#93c5fd' : '#1e40af';
+        
+        if (n.type.includes('approved')) {
+            bgColor = isDarkMode ? '#064e3b' : '#d1fae5';
+            borderColor = '#10b981';
+            textColor = isDarkMode ? '#86efac' : '#065f46';
+        } else if (n.type.includes('denied')) {
+            bgColor = isDarkMode ? '#7f1d1d' : '#fee2e2';
+            borderColor = '#ef4444';
+            textColor = isDarkMode ? '#fca5a5' : '#991b1b';
+        }
+        
+        const readStyle = n.read ? 'opacity: 0.6;' : '';
+        
+        const actionButton = '<button onclick="deleteNotification(\'' + n._id + '\')" style="background:rgba(239,68,68,0.7);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:8px;" onmouseover="this.style.background=\'rgb(239,68,68)\';" onmouseout="this.style.background=\'rgba(239,68,68,0.7)\';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Delete</button>';
+        
+        return '<div style="border-left:3px solid ' + borderColor + '; background:' + bgColor + '; padding:12px; margin-bottom:10px; border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;' + readStyle + '">' +
+            '<div style="flex:1;">' +
+            '<div style="font-weight:600;font-size:12px;margin-bottom:4px;color:' + textColor + ';">' + n.title + '</div>' +
+            '<div style="font-size:12px;color:var(--text);margin-bottom:6px;">' + (n.message.substring(0, 60) + (n.message.length > 60 ? '...' : '')) + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);">' + n.timestamp + '</div>' +
+            '</div>' +
+            actionButton +
+        '</div>';
+    }).join('');
+}
+
+/* ─────────────── MESSAGE NOTIFICATIONS ─────────────── */
+function renderMessageNotifications() {
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+    const container = document.getElementById('messageNotificationsContainer');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User' };
+    
+    let messageNotifs = [];
+    
+    // Regular users see contact messages and contact replies
+    if (currentUser.role !== 'Admin') {
+        messageNotifs = userNotifications.filter(n => 
+            (n.type === 'contact-message' && n.contactEmail !== currentUser.email) ||
+            n.type === 'user-reply'
+        );
+        
+        // Add contact replies for this user
+        const userReplies = contactReplies.filter(r => r.toEmail === currentUser.email);
+        messageNotifs = [...messageNotifs, ...userReplies];
+    } else {
+        // Admin sees contact messages and user replies
+        messageNotifs = userNotifications.filter(n => 
+            n.type === 'contact-message' || n.type === 'user-reply'
+        );
+    }
+    
+    if (!messageNotifs.length) {
+        container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No messages yet.</p>';
+        return;
+    }
+    
+    container.innerHTML = messageNotifs.slice(-5).reverse().map((n, i) => {
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        let bgColor = isDarkMode ? '#1e3a8a' : '#dbeafe';
+        let borderColor = '#3b82f6';
+        let textColor = isDarkMode ? '#93c5fd' : '#1e40af';
+        
+        if (n.type === 'contact-message') {
+            bgColor = isDarkMode ? '#713f12' : '#fef08a';
+            borderColor = '#f59e0b';
+            textColor = isDarkMode ? '#fcd34d' : '#92400e';
+        } else if (n.type === 'contact-reply') {
+            bgColor = isDarkMode ? '#064e3b' : '#d1fae5';
+            borderColor = '#10b981';
+            textColor = isDarkMode ? '#86efac' : '#065f46';
+            // Mark contact replies as read when shown to user
+            if (!n.read) {
+                markAsRead(n._id);
+            }
+        } else if (n.type === 'user-reply') {
+            bgColor = isDarkMode ? '#1e3a8a' : '#dbeafe';
+            borderColor = '#3b82f6';
+            textColor = isDarkMode ? '#93c5fd' : '#1e40af';
+        }
+        
+        const readStyle = n.read ? 'opacity: 0.6;' : '';
+        
+        // Different buttons based on notification type
+        let actionButton = '';
+        if (n.type === 'contact-message') {
+            actionButton = '<button onclick="openContactMessage(\'' + n._id + '\')" style="background:var(--accent);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:4px;" onmouseover="this.style.opacity=\'0.8\';" onmouseout="this.style.opacity=\'1\';"><i class="fa-solid fa-eye" style="margin-right:3px;"></i>View</button>';
+            actionButton += '<button onclick="deleteMessage(\'' + n._id + '\', \'userNotifications\')" style="background:rgba(239,68,68,0.7);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:4px;" onmouseover="this.style.background=\'rgb(239,68,68)\';" onmouseout="this.style.background=\'rgba(239,68,68,0.7)\';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Delete</button>';
+        } else if (n.type === 'contact-reply') {
+            // For users, show Reply button to respond to admin
+            actionButton = '<button onclick="openReplyToAdmin(\'' + n._id + '\')" style="background:#10b981;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:4px;" onmouseover="this.style.opacity=\'0.8\';" onmouseout="this.style.opacity=\'1\';"><i class="fa-solid fa-reply" style="margin-right:3px;"></i>Reply</button>';
+            actionButton += '<button onclick="deleteMessage(\'' + n._id + '\', \'contactReplies\')" style="background:rgba(239,68,68,0.7);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:4px;" onmouseover="this.style.background=\'rgb(239,68,68)\';" onmouseout="this.style.background=\'rgba(239,68,68,0.7)\';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Delete</button>';
+        } else if (n.type === 'user-reply') {
+            // For admin seeing user reply, show View button
+            actionButton = '<button onclick="viewUserReply(\'' + n._id + '\')" style="background:var(--accent);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:4px;" onmouseover="this.style.opacity=\'0.8\';" onmouseout="this.style.opacity=\'1\';"><i class="fa-solid fa-eye" style="margin-right:3px;"></i>View</button>';
+            actionButton += '<button onclick="deleteMessage(\'' + n._id + '\', \'userNotifications\')" style="background:rgba(239,68,68,0.7);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:4px;" onmouseover="this.style.background=\'rgb(239,68,68)\';" onmouseout="this.style.background=\'rgba(239,68,68,0.7)\';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Delete</button>';
+        } else {
+            actionButton = '<button onclick="deleteNotification(\'' + n._id + '\')" style="background:rgba(239,68,68,0.7);color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;transition:.2s;flex-shrink:0;margin-left:8px;" onmouseover="this.style.background=\'rgb(239,68,68)\';" onmouseout="this.style.background=\'rgba(239,68,68,0.7)\';"><i class="fa-solid fa-trash" style="margin-right:3px;"></i>Delete</button>';
+        }
+        
+        return '<div style="border-left:3px solid ' + borderColor + '; background:' + bgColor + '; padding:12px; margin-bottom:10px; border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;' + readStyle + '">' +
+            '<div style="flex:1;">' +
+            '<div style="font-weight:600;font-size:12px;margin-bottom:4px;color:' + textColor + ';">' + n.title + '</div>' +
+            '<div style="font-size:12px;color:var(--text);margin-bottom:6px;">' + (n.message.substring(0, 60) + (n.message.length > 60 ? '...' : '')) + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);">' + n.timestamp + '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:4px;flex-shrink:0;">' + actionButton + '</div>' +
+        '</div>';
+    }).join('');
+}
+
+/* ─────────────── UPDATE UNREAD COUNT ─────────────── */
+function updateUnreadCount() {
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User' };
+    const unreadCount = document.getElementById('unreadNotifCount');
+    
+    let relevantNotifs = [];
+    
+    // Regular users see asset notifications and contact replies
+    if (currentUser.role !== 'Admin') {
+        relevantNotifs = userNotifications.filter(n => 
+            (n.requesterEmail === currentUser.email) &&
+            !(n.type === 'contact-message' && n.contactEmail === currentUser.email)
+        );
+        
+        // Add contact replies for this user
+        const userReplies = contactReplies.filter(r => r.toEmail === currentUser.email);
+        relevantNotifs = [...relevantNotifs, ...userReplies];
+    } else {
+        // Admin only sees userNotifications (NOT contact replies)
+        relevantNotifs = userNotifications;
+    }
+    
+    const unread = relevantNotifs.filter(n => !n.read);
+    
+    if (unreadCount) {
+        unreadCount.textContent = unread.length > 0 ? unread.length + ' New' : '';
+    }
+}
+
+/* ─────────────── DELETE MESSAGE ─────────────── */
+function deleteMessage(messageId, storageType) {
+    if (!confirm('Delete this message?')) return;
+    
+    if (storageType === 'contactReplies') {
+        let contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+        contactReplies = contactReplies.filter(m => m._id !== messageId);
+        localStorage.setItem('contactReplies', JSON.stringify(contactReplies));
+    } else if (storageType === 'userNotifications') {
+        let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        userNotifications = userNotifications.filter(m => m._id !== messageId);
+        localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+    }
+    
+    renderNotifications();
+}
+
+
+/* ─────────────── OPEN CONTACT MESSAGE ─────────────── */
+let currentContactMessageId = null;
+
+function openContactMessage(messageId) {
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const message = userNotifications.find(n => n._id === messageId && n.type === 'contact-message');
+    
+    if (!message) return;
+    
+    currentContactMessageId = messageId;
+    
+    // Mark as read
+    message.read = true;
+    localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+    renderNotifications();
+    
+    // Populate modal
+    document.getElementById('msgFromName').textContent = message.contactName || '—';
+    document.getElementById('msgFromEmail').textContent = message.contactEmail || '—';
+    document.getElementById('msgTimestamp').textContent = message.timestamp || '—';
+    document.getElementById('msgContent').textContent = message.message || '—';
+    
+    // Load and display replies
+    loadAndDisplayReplies(messageId);
+    
+    // Clear reply field
+    document.getElementById('replyMessage').value = '';
+    
+    openModal('contactMessageModal');
+}
+
+/* ─────────────── LOAD AND DISPLAY REPLIES ─────────────── */
+function loadAndDisplayReplies(messageId) {
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const replies = userNotifications.filter(n => n.type === 'contact-reply' && n.linkedContactMessageId === messageId);
+    
+    const container = document.getElementById('repliesContainer');
+    
+    if (!replies.length) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = '<div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:12px;"><strong style="color:var(--muted);font-size:11px;text-transform:uppercase;">Replies</strong></div>' +
+        replies.map(r => {
+            return '<div style="background:#f0fdf4;border-left:3px solid #10b981;padding:10px;border-radius:6px;margin-bottom:8px;font-size:12px;">' +
+                '<div style="font-weight:600;color:#065f46;margin-bottom:4px;">Admin Reply</div>' +
+                '<div style="color:var(--text);white-space:pre-wrap;margin-bottom:4px;">' + r.message + '</div>' +
+                '<div style="font-size:11px;color:var(--muted);">' + r.timestamp + '</div>' +
+            '</div>';
+        }).join('');
+}
+
+/* ─────────────── SEND REPLY TO USER ─────────────── */
+function sendReplyToUser() {
+    if (!currentContactMessageId) return;
+    
+    const replyText = document.getElementById('replyMessage').value.trim();
+    if (!replyText) {
+        alert('Please enter a reply message.');
+        return;
+    }
+    
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const originalMessage = userNotifications.find(n => n._id === currentContactMessageId && n.type === 'contact-message');
+    
+    if (!originalMessage) return;
+    
+    // Create reply notification
+    const reply = {
+        _id: Date.now().toString(),
+        type: 'contact-reply',
+        title: 'Reply to your contact message',
+        message: replyText,
+        linkedContactMessageId: currentContactMessageId,
+        toEmail: originalMessage.contactEmail,
+        timestamp: new Date().toLocaleString(),
+        read: false
+    };
+    
+    userNotifications.push(reply);
+    localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+    
+    // Reload replies and clear input
+    loadAndDisplayReplies(currentContactMessageId);
+    document.getElementById('replyMessage').value = '';
+    
+    alert('✓ Message sent to user');
+}
+
+
+/* ─────────────── DELETE NOTIFICATION ─────────────── */
+function deleteNotification(notificationId) {
+    let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    userNotifications = userNotifications.filter(n => n._id !== notificationId);
+    localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+    renderNotifications();
+}
+
+/* ─────────────── DELETE ASSET FROM DASHBOARD ─────────────── */
+function deleteAssetFromDashboard(assetId) {
+    if (!confirm('Delete this capital request?')) return;
+    let records = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+    records = records.filter(r => r._id !== assetId);
+    localStorage.setItem('assetRecords', JSON.stringify(records));
+    renderAssetTable();
+    renderStats();
+}
+
+/* ─────────────── MARK NOTIFICATION AS READ ─────────────── */
+function markAsRead(notificationId) {
+    let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const notification = userNotifications.find(n => n._id === notificationId);
+    if (notification) {
+        notification.read = true;
+        localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+    }
+}
+
+/* ─────────────── CLEAR ALL NOTIFICATIONS ─────────────── */
+function clearAllNotifications() {
+    if (confirm('Are you sure you want to delete all notifications?')) {
+        localStorage.setItem('userNotifications', JSON.stringify([]));
+        renderNotifications();
+    }
+}
+
+/* ─────────────── CLEAR ASSET NOTIFICATIONS ─────────────── */
+function clearAssetNotifications() {
+    if (confirm('Clear all capital request notifications?')) {
+        let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        userNotifications = userNotifications.filter(n => 
+            !(n.type.includes('approved') || n.type.includes('denied') || n.type === 'asset-request')
+        );
+        localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+        renderNotifications();
+    }
+}
+
+/* ─────────────── CLEAR MESSAGE NOTIFICATIONS ─────────────── */
+function clearMessageNotifications() {
+    if (confirm('Clear all message notifications?')) {
+        let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+        let contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+        
+        // Remove message-related notifications from userNotifications
+        userNotifications = userNotifications.filter(n => 
+            !(n.type === 'contact-message' || n.type === 'user-reply')
+        );
+        
+        // Clear all contact replies
+        contactReplies = [];
+        
+        localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+        localStorage.setItem('contactReplies', JSON.stringify(contactReplies));
+        renderNotifications();
+    }
+}
+
+/* ─────────────── OPEN REPLY TO ADMIN MODAL (FOR USERS) ─────────────── */
+let currentReplyToAdminId = null;
+
+function openReplyToAdmin(replyId) {
+    const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+    const reply = contactReplies.find(r => r._id === replyId);
+    
+    if (!reply) return;
+    
+    currentReplyToAdminId = replyId;
+    
+    // Mark as read
+    reply.read = true;
+    localStorage.setItem('contactReplies', JSON.stringify(contactReplies));
+    renderNotifications();
+    
+    // Populate modal with admin's reply details
+    document.getElementById('adminReplyContent').textContent = reply.message || '—';
+    document.getElementById('adminReplyTimestamp').textContent = reply.timestamp || '—';
+    document.getElementById('userReplyText').value = '';
+    
+    openModal('userReplyToAdminModal');
+}
+
+/* ─────────────── SEND REPLY TO ADMIN ─────────────── */
+function sendReplyToAdmin() {
+    if (!currentReplyToAdminId) return;
+    
+    const replyText = document.getElementById('userReplyText').value.trim();
+    if (!replyText) {
+        alert('Please enter your reply.');
+        return;
+    }
+    
+    const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+    const adminReply = contactReplies.find(r => r._id === currentReplyToAdminId);
+    
+    if (!adminReply) return;
+    
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User' };
+    
+    // Create user's reply notification (stored in userNotifications so admin can see it)
+    const userReply = {
+        _id: 'userreply_' + Date.now(),
+        type: 'user-reply',
+        title: 'User Reply: ' + (adminReply.title || 'Response'),
+        message: replyText,
+        fromEmail: currentUser.email,
+        fromName: currentUser.name || 'User',
+        linkedAdminReplyId: currentReplyToAdminId,
+        linkedContactMessageId: adminReply.linkedContactMessageId,
+        timestamp: new Date().toLocaleString(),
+        read: false
+    };
+    
+    // Store in userNotifications so admin can see this reply
+    let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    userNotifications.push(userReply);
+    localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+    
+    // Clear input and close modal
+    document.getElementById('userReplyText').value = '';
+    closeModal('userReplyToAdminModal');
+    
+    alert('✓ Reply sent to Admin');
+    renderNotifications();
+}
+
+/* ─────────────── VIEW USER REPLY (FOR ADMIN) ─────────────── */
+function viewUserReply(replyId) {
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const userReply = userNotifications.find(n => n._id === replyId && n.type === 'user-reply');
+    
+    if (!userReply) return;
+    
+    // Mark as read
+    userReply.read = true;
+    localStorage.setItem('userNotifications', JSON.stringify(userNotifications));
+    
+    // Populate modal
+    document.getElementById('viewUserReplyContent').textContent = userReply.message || '—';
+    document.getElementById('viewUserReplyFrom').textContent = userReply.fromName || userReply.fromEmail || '—';
+    document.getElementById('viewUserReplyTimestamp').textContent = userReply.timestamp || '—';
+    document.getElementById('adminReplyToUserText').value = '';
+    document.getElementById('currentUserReplyId').value = replyId;
+    
+    openModal('adminViewUserReplyModal');
+}
+
+/* ─────────────── ADMIN REPLY TO USER AGAIN ─────────────── */
+function adminReplyToUserAgain() {
+    const replyToUserText = document.getElementById('adminReplyToUserText').value.trim();
+    const userReplyId = document.getElementById('currentUserReplyId').value;
+    
+    if (!replyToUserText) {
+        alert('Please type a reply message');
+        return;
+    }
+    
+    if (!userReplyId) {
+        alert('Error: User reply id not found');
+        return;
+    }
+    
+    const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    const userReply = userNotifications.find(n => n._id === userReplyId && n.type === 'user-reply');
+    
+    if (!userReply) {
+        alert('User reply not found');
+        return;
+    }
+    
+    // Create new contact reply to user (stored in contactReplies)
+    const newReply = {
+        _id: 'reply_' + Date.now(),
+        type: 'contact-reply',
+        title: 'Reply from Admin',
+        message: replyToUserText,
+        toEmail: userReply.fromEmail,
+        linkedUserReplyId: userReplyId,
+        linkedContactMessageId: userReply.linkedContactMessageId,
+        fromAdmin: true,
+        timestamp: new Date().toLocaleString(),
+        read: false
+    };
+    
+    // Store in contactReplies so user can see it
+    let contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+    contactReplies.push(newReply);
+    localStorage.setItem('contactReplies', JSON.stringify(contactReplies));
+    
+    // Clear and close modal
+    document.getElementById('adminReplyToUserText').value = '';
+    closeModal('adminViewUserReplyModal');
+    
+    alert('✓ Reply sent to user');
+    renderNotifications();
+}
+
+/* ─────────────── RECENT TABLE ─────────────── */
+function renderRecentTable() {
+    var d = getRecords();
+    var tbody = document.getElementById('recentTableBody');
+    if (!d.all.length) return;
+    var recent = d.all.slice().reverse().slice(0, 6);
+    tbody.innerHTML = recent.map(function(r) {
+        var ic     = r.source === 'capital';
+        var id     = ic ? r.capitalId : r.requestId;
+        var badge  = ic ? '<span class="badge badge-capital">Capital</span>' : '<span class="badge badge-asset">Asset</span>';
+        var status = ic
+            ? '<span class="badge ' + (r.status === 'Active' ? 'badge-active' : 'badge-inactive') + '">' + (r.status || 'Active') + '</span>'
+            : (function() {
+                var statusVal = r.status || 'Pending';
+                if (statusVal === 'Approved') {
+                    return '<span class="badge badge-active">Approved</span>';
+                } else if (statusVal === 'Denied') {
+                    return '<span class="badge badge-inactive">Denied</span>';
+                } else {
+                    return '<span class="badge badge-pending">Pending</span>';
+                }
+            })();
+        var date = ic ? (r.financialYear || '—') : (r.requestDate || '—');
+        return '<tr><td>' + (id||'—') + '</td><td>' + badge + '</td><td>' + (r.capitalType||'—') + '</td><td>' + status + '</td><td>' + date + '</td></tr>';
+    }).join('');
+}
+
+/* ─────────────── ASSET MASTER TABLE ─────────────── */
+function renderAssetTable() {
+    var d = getRecords();
+    var tbody = document.getElementById('assetTableBody');
+    if (!d.assets.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="12">No capital requests yet. <a href="asset.html">Submit one →</a></td></tr>';
+        return;
+    }
+    tbody.innerHTML = d.assets.slice().reverse().map(function(r, i) {
+        let statusBgColor = '#fef3c7';
+        let statusTextColor = '#92400e';
+        if (r.status === 'Approved') {
+            statusBgColor = '#d1fae5';
+            statusTextColor = '#065f46';
+        } else if (r.status === 'Denied') {
+            statusBgColor = '#fee2e2';
+            statusTextColor = '#991b1b';
+        }
+        const statusBadge = '<span style="background:' + statusBgColor + ';color:' + statusTextColor + ';padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">' + (r.status || 'Pending') + '</span>';
+        
+        const capitalAllocations = JSON.parse(localStorage.getItem('capitalAllocations') || '{}');
+        const capitalType = r.capitalType;
+        const allocationRecord = capitalAllocations[capitalType];
+        let allocatedStr = '—';
+        let pendingStr = '—';
+        if (allocationRecord) {
+            allocatedStr = allocationRecord.allocated ? '₹' + Number(allocationRecord.allocated).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
+            const remainingAmount = (parseFloat(allocationRecord.allocated) || 0) - (parseFloat(allocationRecord.used) || 0);
+            pendingStr = remainingAmount >= 0 ? '₹' + remainingAmount.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '₹0';
+        }
+        
+        const usedStr = r.status === 'Approved' && r.allocatedFund ? '₹' + Number(r.allocatedFund).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
+        const requestAmount = parseFloat(r.qty || r.requestedFund) || 0;
+        const quantity = requestAmount ? requestAmount.toLocaleString('en-IN') : '—';
+        
+        return '<tr>' +
+            '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
+            '<td><strong style="color:var(--navy);">' + (r.requestId || '—') + '</strong></td>' +
+            '<td style="text-align:center;font-weight:600;color:var(--accent);">' + (r.capitalType || '—') + '</td>' +
+            '<td>' + (r.requesterName || '—') + '</td>' +
+            '<td style="color:var(--muted);font-size:12px;">' + (r.requestDate || '—') + '</td>' +
+            '<td style="text-align:center;font-weight:600;color:var(--accent);">' + quantity + '</td>' +
+            '<td style="text-align:center;font-size:12px;color:#0284c7;font-weight:600;">' + allocatedStr + '</td>' +
+            '<td style="text-align:center;font-size:12px;color:#ca8a04;font-weight:600;">' + usedStr + '</td>' +
+            '<td style="text-align:center;font-size:12px;color:#059669;font-weight:600;">' + pendingStr + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td style="font-size:12px;color:var(--muted);">' + (r.remarks || '—') + '</td>' +
+            '<td style="font-size:12px;color:var(--muted);">' + (r.capitalMasterRemarks || '—') + '</td>' +
+        '</tr>';
+    }).join('');
+}
+
+/* ─────────────── FUND BARS ─────────────── */
+function renderFundBars() {
+    var d = getRecords();
+    var wrap = document.getElementById('fundBars');
+    if (!d.capitals.length) return;
+    var colors = ['#3b82f6','#10b981','#f59e0b','#f43f5e','#8b5cf6','#06b6d4'];
+    wrap.innerHTML = d.capitals.slice(0, 5).map(function(r, i) {
+        var alloc = parseFloat(r.allocated) || 1;
+        var used  = parseFloat(r.used) || 0;
+        var pct   = Math.min(100, Math.round((used / alloc) * 100));
+        var color = colors[i % colors.length];
+        return '<div class="fund-row"><div class="fund-row-top"><div class="fund-name">' + (r.capitalType||r.capitalId||'Fund') + '</div><div class="fund-val">' + pct + '% used</div></div><div class="fund-bar-bg"><div class="fund-bar-fill" style="width:0%;background:' + color + ';" data-pct="' + pct + '"></div></div></div>';
+    }).join('');
+    setTimeout(function() {
+        document.querySelectorAll('.fund-bar-fill').forEach(function(b) { b.style.width = b.dataset.pct + '%'; });
+    }, 100);
+}
+
+/* ─────────────── ACTIVITY FEED ─────────────── */
+function renderActivity() {
+    var d = getRecords();
+    if (!d.all.length) return;
+    var icons = {
+        capital: { bg:'#dbeafe', color:'#1d4ed8', icon:'fa-building-columns' },
+        asset:   { bg:'#d1fae5', color:'#059669', icon:'fa-boxes-stacked' }
+    };
+    var feed = document.getElementById('activityFeed');
+    feed.innerHTML = d.all.slice().reverse().slice(0, 5).map(function(r) {
+        var cfg   = icons[r.source];
+        var label = r.source === 'capital' ? 'Capital saved: ' + (r.capitalId||'—') : 'Capital request: ' + (r.requestId||'—');
+        return '<div class="activity-item"><div class="act-dot" style="background:' + cfg.bg + ';color:' + cfg.color + ';"><i class="fa-solid ' + cfg.icon + '"></i></div><div class="act-info"><div class="act-title">' + label + '</div><div class="act-sub">' + (r.capitalType||r.requesterName||'—') + '</div></div><div class="act-time">' + (r.savedOn ? r.savedOn.split(',')[0] : '—') + '</div></div>';
+    }).join('');
+}
+
+/* ─────────────── TYPE BREAKDOWN ─────────────── */
+function renderTypeBreakdown() {
+    var d = getRecords();
+    if (!d.all.length) return;
+    var counts = {};
+    d.all.forEach(function(r) { var t = r.capitalType || 'Unknown'; counts[t] = (counts[t] || 0) + 1; });
+    var total  = d.all.length;
+    var colors = ['#3b82f6','#10b981','#f59e0b','#f43f5e','#8b5cf6','#06b6d4','#ec4899'];
+    var entries = Object.keys(counts).map(function(k) { return [k, counts[k]]; });
+    document.getElementById('typeBreakdown').innerHTML = entries.map(function(entry, i) {
+        var type = entry[0]; var count = entry[1];
+        var pct  = Math.round((count / total) * 100);
+        return '<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;margin-bottom:5px;"><div style="font-size:12px;font-weight:600;color:var(--text);">' + type + '</div><div style="font-size:12px;color:var(--muted);">' + count + ' (' + pct + '%)</div></div><div class="fund-bar-bg"><div class="fund-bar-fill" style="width:0%;background:' + colors[i % colors.length] + ';" data-pct="' + pct + '"></div></div></div>';
+    }).join('');
+    setTimeout(function() {
+        document.querySelectorAll('.fund-bar-fill').forEach(function(b) { b.style.width = b.dataset.pct + '%'; });
+    }, 100);
+}
+
+/* ─────────────── SEARCH ─────────────── */
+function handleSearch(q) {
+    if (!q.trim()) { renderRecentTable(); return; }
+    var d = getRecords();
+    var results = d.all.filter(function(r) { return JSON.stringify(r).toLowerCase().indexOf(q.toLowerCase()) !== -1; });
+    var tbody = document.getElementById('recentTableBody');
+    if (results.length) {
+        tbody.innerHTML = results.slice(0, 6).map(function(r) {
+            var ic = r.source === 'capital';
+            return '<tr><td>' + (ic ? r.capitalId : r.requestId || '—') + '</td><td><span class="badge ' + (ic ? 'badge-capital' : 'badge-asset') + '">' + (ic ? 'Capital' : 'Asset') + '</span></td><td>' + (r.capitalType||'—') + '</td><td><span class="badge badge-active">' + (r.status||'Pending') + '</span></td><td>' + (ic ? (r.financialYear||'—') : (r.requestDate||'—')) + '</td></tr>';
+        }).join('');
+    } else {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No results for "' + q + '"</td></tr>';
+    }
+}
+
+/* ─────────────── MODALS ─────────────── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(function(el) {
+    el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+/* ─────────────── CONTACT FORM VALIDATION ─────────────── */
+async function validateAndSendContactForm() {
+    var name = document.getElementById('contactName').value.trim();
+    var email = document.getElementById('contactEmail').value.trim();
+    var message = document.getElementById('contactMessage').value.trim();
+    
+    if (!name || !email || !message) {
+        alert('Please fill in all fields.');
+        return;
+    }
+    
+    // Email validation
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+        alert('Please enter a valid email address.');
+        return;
+    }
+    
+    // Create message and save
+    const now = new Date();
+    const messageObj = {
+        name: name,
+        email: email,
+        message: message,
+        timestamp: now.toLocaleString('en-IN')
+    };
+    
+    // Save to localStorage
+    saveContactMessage(messageObj);
+    
+    // Send notification to admin
+    sendAdminNotification(messageObj);
+    
+    // Reset form
+    document.getElementById('contactName').value = '';
+    document.getElementById('contactEmail').value = '';
+    document.getElementById('contactMessage').value = '';
+    closeModal('contactModal');
+    
+    alert('✓ Message sent successfully!\n\nYour message has been sent to the admin.');
+}
+
+// Save contact message to localStorage
+function saveContactMessage(messageObj) {
+    let messages = JSON.parse(localStorage.getItem('contactMessages')) || [];
+    messages.push(messageObj);
+    localStorage.setItem('contactMessages', JSON.stringify(messages));
+}
+
+// Send notification to admin
+function sendAdminNotification(messageObj) {
+    let adminNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
+    
+    adminNotifications.push({
+        _id: Date.now().toString(),
+        type: 'contact-message',
+        title: `New Contact Message from ${messageObj.name}`,
+        message: `Email: ${messageObj.email}\n\nMessage: ${messageObj.message}`,
+        contactEmail: messageObj.email,
+        contactName: messageObj.name,
+        timestamp: new Date().toLocaleString(),
+        read: false
+    });
+    
+    localStorage.setItem('userNotifications', JSON.stringify(adminNotifications));
+}
+
+/* ─────────────── SESSION TIMER ─────────────── */
+var sessionStart = Date.now();
+setInterval(function() {
+    var mins = Math.floor((Date.now() - sessionStart) / 60000);
+    var el = document.getElementById('sessionTime');
+    if (el) el.textContent = mins > 0 ? 'Active (' + mins + 'm)' : 'Active (< 1m)';
+}, 30000);
+
+/* ─────────────── USER PROFILE MANAGEMENT ─────────────── */
+function loadUserProfile() {
+    var currentUser = localStorage.getItem('currentUser');
+    
+    // If no user logged in, redirect to login
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        var userData = JSON.parse(currentUser);
+        
+        // Update profile button with user name
+        var profileBtn = document.getElementById('profileBtn');
+        if (profileBtn) {
+            profileBtn.innerHTML = userData.name + ' <i class="fa-solid fa-user"></i>';
+        }
+        
+        // Generate avatar initials
+        var nameParts = userData.name.split(' ');
+        var initials = (nameParts[0][0] || 'U') + (nameParts[1] ? nameParts[1][0] : nameParts[0][1] || '');
+        
+        // Get avatar colors
+        var colors = ['linear-gradient(135deg, #f59e0b, #fbbf24)', 'linear-gradient(135deg, #3b82f6, #1d4ed8)', 'linear-gradient(135deg, #10b981, #059669)', 'linear-gradient(135deg, #8b5cf6, #7c3aed)', 'linear-gradient(135deg, #ec4899, #db2777)'];
+        var colorIndex = userData.id % colors.length;
+        
+        // Update profile modal
+        var avatarEl = document.getElementById('userAvatar');
+        if (avatarEl) {
+            avatarEl.textContent = initials.toUpperCase();
+            avatarEl.style.background = colors[colorIndex];
+        }
+        
+        document.getElementById('userName').textContent = userData.name;
+        document.getElementById('userRole').textContent = 'Active User';
+        document.getElementById('userEmail').textContent = userData.email;
+        document.getElementById('userUsername').textContent = userData.username;
+        document.getElementById('userLoginTime').textContent = userData.loginTime;
+        
+    } catch (e) {
+        console.error('Error loading user profile:', e);
+        window.location.href = 'login.html';
+    }
+}
+
+function handleLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('currentUser');
+        alert('You have been logged out successfully!');
+        window.location.href = 'login.html';
+    }
+}
+
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login.html';
+    }
+}
+
+function toggleProfileMenu() {
+    const dropdown = document.getElementById('profileDropdownDash');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateProfileMenu() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {
+        name: 'User',
+        email: 'user@capital.com',
+        role: 'User'
+    };
+    
+    // Update avatar and info in topbar
+    document.getElementById('userAvatarDash').textContent = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('userNameDash').textContent = currentUser.name.split(' ')[0];
+    document.getElementById('userRoleDash').textContent = currentUser.role;
+    
+    // Update dropdown info
+    document.getElementById('dropdownUserName').textContent = currentUser.name;
+    document.getElementById('dropdownUserEmail').textContent = currentUser.email;
+    
+    // Show admin link only if admin
+    const adminLink = document.getElementById('adminLinkDash');
+    if (adminLink) {
+        adminLink.style.display = currentUser.role === 'Admin' ? 'flex' : 'none';
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('profileDropdownDash');
+    const profileBtn = document.querySelector('.profile-btn');
+    if (dropdown && !profileBtn.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+// Update page date dynamically
+(function updatePageDate() {
+    const today = new Date();
+    const pageDate = document.getElementById('pageDate');
+    const pageDay = document.getElementById('pageDay');
+    if (pageDate) pageDate.textContent = today.getDate();
+    if (pageDay) pageDay.textContent = today.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
+})();
+
+// Update menu on load
+document.addEventListener('DOMContentLoaded', () => {
+    updateProfileMenu();
+    loadUserProfile();
+});
+
+/* ─────────────── INIT ─────────────── */
+renderStats();
+renderNotifications();
+renderRecentTable();
+renderAssetTable();
+renderFundBars();
+renderActivity();
+renderTypeBreakdown();
+</script>
+</body>
+</html>

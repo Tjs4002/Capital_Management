@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "email": "admin@capital.com",
+    "password": "$2a$10$JL2fZiRtee/GzRH2IZNqTO00QKB2jn0i3cEP6pIO3eKvBH0PRw4Ly",
+    "name": "Admin User",
+    "role": "admin",
+    "department": "Management",
+    "phone": "",
+    "status": "active"
+  },
+  {
+    "id": 2,
+    "email": "master@capital.com",
+    "password": "$2a$10$.WsKEKl8XQCd3jV0it3jFe8ttMbfPwH2ggoMBF6KEpEYNRSSMOwme",
+    "name": "Capital Master",
+    "role": "capital_master",
+    "department": "Finance",
+    "phone": "",
+    "status": "active"
+  },
+  {
+    "id": 3,
+    "email": "requester@capital.com",
+    "password": "$2a$10$N9IpGn1TsLe1jYhm8.ifeu0PHQGJoQhycShYmbcjnSim7XcLfLsQe",
+    "name": "Asset Requester",
+    "role": "requester",
+    "department": "Operations",
+    "phone": "",
+    "status": "active"
+  },
+  {
+    "id": 4,
+    "email": "tejaschavan4002@gmail.com",
+    "password": "$2a$10$b4q2sCgQwv.eGu4amWBQ2Ot1GeKpobVEDWqEkrqUR5xXU4BMlZIpu",
+    "name": "Tejas Chavan",
+    "department": "IT",
+    "phone": "9096851337",
+    "role": "requester",
+    "status": "active"
+  },
+  {
+    "id": 5,
+    "email": "aananditasingh45@gmail.com",
+    "password": "$2a$10$hUa4mlC6/B/57Vll2IPB4OpkWm4GvKadpMmImvPeUQ5NvcIVFsZIW",
+    "name": "Aanandita Singh",
+    "department": "IT",
+    "phone": "8856010845",
+    "role": "requester",
+    "status": "active"
+  }
+]

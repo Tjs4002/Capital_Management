@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Budget Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #d4e6f1 0%, #85c1e2 50%, #5dade2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .registration-wrapper {
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .registration-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .registration-header {
+            background: linear-gradient(135deg, #052377, #0a35a8);
+            padding: 30px 24px;
+            text-align: center;
+            color: white;
+        }
+        
+        .registration-header i {
+            font-size: 40px;
+            margin-bottom: 12px;
+            display: block;
+        }
+        
+        .registration-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .registration-header p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .registration-body {
+            padding: 30px 24px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Arial', sans-serif;
+            outline: none;
+            transition: 0.2s;
+            background: #f8fafc;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        
+        .password-toggle {
+            position: relative;
+        }
+        
+        .toggle-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        .error-message {
+            color: #e11d48;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #052377, #0a35a8);
+            color: white;
+        }
+        
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #0a35a8, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(5,35,119,0.3);
+        }
+        
+        .btn-reset {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        
+        .btn-reset:hover {
+            background: #cbd5e1;
+        }
+        
+        .footer-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #64748b;
+        }
+        
+        .footer-text a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+        
+        .success-message {
+            background: #d1fae5;
+            border: 2px solid #6ee7b7;
+            color: #065f46;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+
+        .success-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .success-overlay.show {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .success-popup {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            animation: popUp 0.5s ease-out;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            color: white;
+            animation: scaleIn 0.6s ease-out;
+        }
+
+        .success-popup h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #065f46;
+            margin-bottom: 10px;
+        }
+
+        .success-popup p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .countdown {
+            font-size: 13px;
+            color: #0891b2;
+            font-weight: 600;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes popUp {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="registration-wrapper">
+        <div class="registration-card">
+            <div class="registration-header">
+                <i class="fas fa-user-plus"></i>
+                <h2>Create Account</h2>
+                <p>Join our Budget Management System</p>
+            </div>
+            
+            <div class="registration-body">
+                <div class="success-message" id="successMessage">
+                    <i class="fas fa-check-circle"></i> Account created successfully! Redirecting to login...
+                </div>
+                
+                <form id="registrationForm" onsubmit="handleRegistration(event)">
+                    <!-- Full Name -->
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="fullName">Full Name *</label>
+                            <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                            <div class="error-message" id="fullNameError"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Username and Email -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="username">Username *</label>
+                            <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                            <div class="error-message" id="usernameError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                            <div class="error-message" id="emailError"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Fields -->
+                    <div class="form-row">
+                        <div class="form-group password-toggle">
+                            <label for="password">Password *</label>
+                            <input type="password" id="password" name="password" placeholder="Enter password" required>
+                            <button type="button" class="toggle-btn" onclick="togglePassword('password')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <div class="error-message" id="passwordError"></div>
+                        </div>
+                        
+                        <div class="form-group password-toggle">
+                            <label for="confirmPassword">Retype Password *</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" required>
+                            <button type="button" class="toggle-btn" onclick="togglePassword('confirmPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <div class="error-message" id="confirmPasswordError"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Phone Number -->
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="phone">Phone Number *</label>
+                            <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
+                            <div class="error-message" id="phoneError"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gender and Date of Birth -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gender">Gender *</label>
+                            <select id="gender" name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="error-message" id="genderError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dob">Date of Birth *</label>
+                            <input type="date" id="dob" name="dob" required>
+                            <div class="error-message" id="dobError"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- City -->
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="city">City *</label>
+                            <input type="text" id="city" name="city" placeholder="Enter your city" required>
+                            <div class="error-message" id="cityError"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Department and Designation -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="department">Department *</label>
+                            <select id="department" name="department" required>
+                                <option value="">Select Department</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Operations">Operations</option>
+                                <option value="IT">IT</option>
+                                <option value="Human Resources">Human Resources</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Marketing">Marketing</option>
+                            </select>
+                            <div class="error-message" id="departmentError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="designation">Designation / Role *</label>
+                            <select id="designation" name="designation" required>
+                                <option value="">Select Designation</option>
+                                <option value="Director">Director</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Officer">Officer</option>
+                                <option value="Assistant">Assistant</option>
+                                <option value="Intern">Intern</option>
+                            </select>
+                            <div class="error-message" id="designationError"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-submit">
+                            <i class="fas fa-user-check"></i> Register
+                        </button>
+                        <button type="reset" class="btn btn-reset">
+                            <i class="fas fa-undo"></i> Clear
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="footer-text">
+                    Already have an account? <a href="login.html">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- SUCCESS OVERLAY -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-popup">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2>Registration Successful!</h2>
+            <p>Your account has been created successfully. You can now login with your username or email.</p>
+            <p class="countdown">Redirecting to login page in <span id="countdownTimer">3</span> seconds...</p>
+        </div>
+    </div>
+    
+    <script>
+        // Toggle password visibility
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = event.target.closest('button');
+            const icon = button.querySelector('i');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+        
+        // Clear all error messages
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(msg => {
+                msg.classList.remove('show');
+                msg.textContent = '';
+            });
+        }
+        
+        // Validate registration form
+        function validateForm() {
+            clearErrors();
+            let isValid = true;
+            
+            // Full Name validation
+            const fullName = document.getElementById('fullName').value.trim();
+            if (fullName.length < 3) {
+                showError('fullNameError', 'Full name must be at least 3 characters');
+                isValid = false;
+            }
+            
+            // Username validation
+            const username = document.getElementById('username').value.trim();
+            if (username.length < 3) {
+                showError('usernameError', 'Username must be at least 3 characters');
+                isValid = false;
+            }
+            
+            // Check if username already exists
+            const existingUsers = JSON.parse(localStorage.getItem('capitalUsers') || '[]');
+            if (existingUsers.some(user => user.username === username)) {
+                showError('usernameError', 'Username already exists. Please choose another.');
+                isValid = false;
+            }
+            
+            // Email validation
+            const email = document.getElementById('email').value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('emailError', 'Please enter a valid email address');
+                isValid = false;
+            }
+            
+            // Check if email already exists
+            if (existingUsers.some(user => user.email === email)) {
+                showError('emailError', 'Email already registered. Please login or use a different email.');
+                isValid = false;
+            }
+            
+            // Password validation
+            const password = document.getElementById('password').value;
+            if (password.length < 6) {
+                showError('passwordError', 'Password must be at least 6 characters');
+                isValid = false;
+            }
+            
+            // Confirm password validation
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (password !== confirmPassword) {
+                showError('confirmPasswordError', 'Passwords do not match');
+                isValid = false;
+            }
+            
+            // Phone validation
+            const phone = document.getElementById('phone').value.trim();
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!phoneRegex.test(phone.replace(/[-\s]/g, ''))) {
+                showError('phoneError', 'Please enter a valid 10-digit phone number');
+                isValid = false;
+            }
+            
+            // Gender validation
+            if (!document.getElementById('gender').value) {
+                showError('genderError', 'Please select a gender');
+                isValid = false;
+            }
+            
+            // Date of birth validation
+            const dob = document.getElementById('dob').value;
+            if (!dob) {
+                showError('dobError', 'Please select your date of birth');
+                isValid = false;
+            } else {
+                const birthDate = new Date(dob);
+                const today = new Date();
+                const age = today.getFullYear() - birthDate.getFullYear();
+                if (age < 18) {
+                    showError('dobError', 'You must be at least 18 years old');
+                    isValid = false;
+                }
+            }
+            
+            // City validation
+            const city = document.getElementById('city').value.trim();
+            if (city.length < 2) {
+                showError('cityError', 'Please enter a valid city name');
+                isValid = false;
+            }
+            
+            // Department validation
+            if (!document.getElementById('department').value) {
+                showError('departmentError', 'Please select a department');
+                isValid = false;
+            }
+            
+            // Designation validation
+            if (!document.getElementById('designation').value) {
+                showError('designationError', 'Please select a designation');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Show error message
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+        
+        // Handle registration
+        function handleRegistration(event) {
+            event.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+            
+            // Collect form data
+            const registrationData = {
+                name: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value,
+                phone: document.getElementById('phone').value.trim(),
+                department: document.getElementById('department').value,
+                role: 'requester'
+            };
+            
+            // Call backend API
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(registrationData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Store token and user data
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    
+                    // Show success overlay
+                    const successOverlay = document.getElementById('successOverlay');
+                    successOverlay.classList.add('show');
+                    
+                    // Reset form
+                    document.getElementById('registrationForm').reset();
+                    
+                    // Countdown timer
+                    let countdown = 3;
+                    const countdownElement = document.getElementById('countdownTimer');
+                    const countdownInterval = setInterval(() => {
+                        countdown--;
+                        countdownElement.textContent = countdown;
+                        if (countdown === 0) {
+                            clearInterval(countdownInterval);
+                            window.location.href = 'login.html';
+                        }
+                    }, 1000);
+                } else {
+                    showError('generalError', data.error || 'Registration failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Registration error:', error);
+                showError('generalError', 'Connection error. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>
