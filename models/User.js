@@ -31,6 +31,10 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('active', 'inactive'),
     defaultValue: 'active',
   },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   hooks: {
     beforeCreate: async (user) => {

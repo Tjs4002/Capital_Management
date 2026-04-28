@@ -58,5 +58,35 @@
     "phone": "9307434621",
     "role": "requester",
     "status": "active"
+  },
+  {
+    "id": 7,
+    "email": "chavantejastushar@gmail.com",
+    "password": "$2a$10$Vhmkpeb1bMLmfEnu97D5me9/xJ9jA9Syd5Cq2hf2whDoGEo6eAV72",
+    "name": "ayush",
+    "department": "Sales",
+    "phone": "9096851337",
+    "role": "requester",
+    "status": "active"
+  },
+  {
+    "id": 8,
+    "email": "deshpanderaghav363@gmail.com",
+    "password": "$2a$10$NICPFQnKHW8jeBbT5Lx9Nuk73k/Id2PMcBR8gb8uWw7/4xqb/efwK",
+    "name": "raghav",
+    "department": "Sales",
+    "phone": "9096851337",
+    "role": "requester",
+    "status": "active"
+  },
+  {
+    "id": 9,
+    "email": "titangaming4002@gmail.com",
+    "password": "$2a$10$I5/88PGWaExiYk8HS4vKXu41O1a6L3o8lGxL9GSze/Nco7yAKHPXy",
+    "name": "TITAN",
+    "department": "Human Resources",
+    "phone": "9096851337",
+    "role": "requester",
+    "status": "active"
   }
 ]

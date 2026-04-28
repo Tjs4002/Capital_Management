@@ -6,6 +6,9 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+const sequelize = require('./config/database');
+const User = require('./models/User');
+
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -280,20 +283,52 @@ app.get('/api/contact', authMiddleware, (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// Mount Sequelize-based auth routes (with email verification)
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+// API endpoint to check user verification status
+app.get('/api/auth/verify-status/:email', async (req, res) => {
+  try {
+    const user = await User.findOne({ where: { email: req.params.email } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ isVerified: user.isVerified, email: user.email });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mount email verification routes
 const emailVerificationRoutes = require('./routes/emailVerification');
 app.use('/', emailVerificationRoutes);
 
-// Static files                     ← this becomes line 287
+// Static files
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 
 // Init and start
-initDataFiles();
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📁 Data stored at: ${DATA_DIR}`);
-  console.log(`\n📊 Sample Credentials:`);
-  console.log(`  Admin: admin@capital.com / admin123`);
-  console.log(`  Capital Master: master@capital.com / master123`);
-  console.log(`  Requester: requester@capital.com / requester123`);
-});
+async function startServer() {
+  try {
+    // Sync database with models
+    await sequelize.sync({ alter: true });
+    console.log('✅ Database synchronized');
+
+    initDataFiles();
+    
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📁 Data stored at: ${DATA_DIR}`);
+      console.log(`\n📊 Sample Credentials:`);
+      console.log(`  Admin: admin@capital.com / admin123`);
+      console.log(`  Capital Master: master@capital.com / master123`);
+      console.log(`  Requester: requester@capital.com / requester123`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();

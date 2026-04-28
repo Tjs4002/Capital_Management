@@ -38,8 +38,9 @@ router.post('/register', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Registration successful! Please check your email to verify your account.',  // CHANGED
+      message: 'Registration successful! Please check your email to verify your account.',
       userId: user.id,
+      email: user.email,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

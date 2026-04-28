@@ -20,7 +20,7 @@ router.post('/send-verification', async (req, res) => {
 });
 
 // The link in the email hits this route
-router.get('/verify-email', (req, res) => {
+router.get('/verify-email', async (req, res) => {
   const { token } = req.query;
   const email = verifyToken(token);
 
@@ -28,11 +28,15 @@ router.get('/verify-email', (req, res) => {
     return res.redirect('/verify-email.html?status=invalid');
   }
 
-  // TODO: Mark the user as verified in your database here
-  // e.g.: User.updateOne({ email }, { isVerified: true })
-
-  console.log(`✅ Email verified: ${email}`);
-  res.redirect('/verify-email.html?status=success');
+  try {
+    const User = require('../models/User');
+    await User.update({ isVerified: true }, { where: { email } });
+    console.log(`✅ Email verified: ${email}`);
+    res.redirect('/verify-email.html?status=success');
+  } catch (err) {
+    console.error('Error updating user verification:', err);
+    res.redirect('/verify-email.html?status=error');
+  }
 });
 
 // Resend link

@@ -54,11 +54,27 @@
 <body>
 
 <script>
-// Check if user is logged in - redirect to login if not
-(function checkLogin() {
+// Check if user is logged in and email is verified - redirect if not
+(async function checkLoginAndVerification() {
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
         window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        const user = JSON.parse(currentUser);
+        const response = await fetch(`/api/auth/verify-status/${encodeURIComponent(user.email)}`);
+        const data = await response.json();
+        
+        if (!data.isVerified) {
+            console.warn('⚠️ User email not verified. Redirecting to verification page.');
+            sessionStorage.setItem('registrationEmail', user.email);
+            window.location.href = `verify-email-pending.html?email=${encodeURIComponent(user.email)}`;
+        }
+    } catch (error) {
+        console.error('Error checking verification status:', error);
+        // Continue anyway - user might be offline
     }
 })();
 

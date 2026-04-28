@@ -641,28 +641,18 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Store token and user data
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('currentUser', JSON.stringify(data.user));
-                    
-                    // Show success overlay
-                    const successOverlay = document.getElementById('successOverlay');
-                    successOverlay.classList.add('show');
+                    // Store email in session for verification page
+                    sessionStorage.setItem('registrationEmail', data.email || registrationData.email);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('currentUser');
                     
                     // Reset form
                     document.getElementById('registrationForm').reset();
                     
-                    // Countdown timer
-                    let countdown = 3;
-                    const countdownElement = document.getElementById('countdownTimer');
-                    const countdownInterval = setInterval(() => {
-                        countdown--;
-                        countdownElement.textContent = countdown;
-                        if (countdown === 0) {
-                            clearInterval(countdownInterval);
-                            window.location.href = 'login.html';
-                        }
-                    }, 1000);
+                    // Redirect to email verification pending page
+                    setTimeout(() => {
+                        window.location.href = `verify-email-pending.html?email=${encodeURIComponent(data.email || registrationData.email)}`;
+                    }, 500);
                 } else {
                     showError('generalError', data.error || 'Registration failed. Please try again.');
                 }
