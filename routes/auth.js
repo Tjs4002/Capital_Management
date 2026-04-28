@@ -3,6 +3,8 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const sequelize = require('../config/database');
+const { generateToken } = require('../utils/tokenStore');         // ADD
+const { sendVerificationEmail } = require('../utils/mailer');     // ADD
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -30,23 +32,14 @@ router.post('/register', async (req, res) => {
       status: 'active',
     });
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    // Send verification email                                     // ADD
+    const verifyToken = generateToken(email);                      // ADD
+    await sendVerificationEmail(email, verifyToken);               // ADD
 
     res.json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Registration successful! Please check your email to verify your account.',  // CHANGED
       userId: user.id,
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -66,6 +59,13 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    // Block unverified users                                      // ADD
+    if (!user.isVerified) {                                        // ADD
+      return res.status(403).json({                               // ADD
+        error: 'Please verify your email before logging in.'      // ADD
+      });                                                          // ADD
+    }                                                              // ADD
 
     const passwordValid = await user.validatePassword(password);
     if (!passwordValid) {
@@ -94,7 +94,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Logout (optional - JWT is stateless)
+// Logout
 router.post('/logout', (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });

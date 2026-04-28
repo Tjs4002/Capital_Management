@@ -280,7 +280,10 @@ app.get('/api/contact', authMiddleware, (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// Static files
+const emailVerificationRoutes = require('./routes/emailVerification');
+app.use('/', emailVerificationRoutes);
+
+// Static files                     ← this becomes line 287
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 
 // Init and start

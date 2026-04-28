@@ -1,12 +1,8 @@
-<<<<<<< HEAD
-const path = require('path');
 const sequelize = require('./config/database');
 const User = require('./models/User');
-=======
 const fs = require('fs');
 const path = require('path');
 const bcryptjs = require('bcryptjs');
->>>>>>> 9fb6530367c8882ae89191349e865411e9291cf4
 
 const DATA_DIR = path.join(__dirname, 'data');
 
@@ -53,9 +49,7 @@ const users = [
     phone: '1234567892',
     status: 'active'
   }
-<<<<<<< HEAD
-})();
-=======
+
 ];
 
 if (!fs.existsSync(USERS_FILE)) {
@@ -119,4 +113,3 @@ console.log('  Capital Master: master@capital.com / master123');
 console.log('  Requester: requester@capital.com / requester123');
 
 process.exit(0);
->>>>>>> 9fb6530367c8882ae89191349e865411e9291cf4
