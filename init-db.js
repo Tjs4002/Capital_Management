@@ -1,3 +1,4 @@
+const path = require('path');
 const sequelize = require('./config/database');
 const User = require('./models/User');
 
@@ -56,18 +57,3 @@ const User = require('./models/User');
     process.exit(1);
   }
 })();
-const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
-
-fs.writeFileSync(ASSETS_FILE, JSON.stringify([], null, 2));
-fs.writeFileSync(NOTIFICATIONS_FILE, JSON.stringify([], null, 2));
-fs.writeFileSync(CONTACTS_FILE, JSON.stringify([], null, 2));
-
-console.log('✅ Initialized assets.json');
-console.log('✅ Initialized notifications.json');
-console.log('✅ Initialized contacts.json');
-
-console.log('\n🎉 Database initialized successfully!');
-console.log('\n📊 Sample Credentials:');
-console.log('  Admin: admin@capital.com / admin123');
-console.log('  Capital Master: master@capital.com / master123');
-console.log('  Requester: requester@capital.com / requester123');

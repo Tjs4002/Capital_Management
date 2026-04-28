@@ -57,6 +57,15 @@
         <a href="capitalmaster.html"><div class="nav-icon"><i class="fa-solid fa-building-columns"></i></div>Capital Master<span class="nav-badge" id="capCount"></span></a>
     </div>
     <div class="nav-item">
+        <a href="financemanager.html"><div class="nav-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>Finance Manager</a>
+    </div>
+    <div class="nav-item">
+        <a href="cfo.html"><div class="nav-icon"><i class="fa-solid fa-crown"></i></div>CFO</a>
+    </div>
+    <div class="nav-item">
+        <a href="md.html"><div class="nav-icon"><i class="fa-solid fa-gem"></i></div>MD</a>
+    </div>
+    <div class="nav-item">
         <a href="list.html"><div class="nav-icon"><i class="fa-solid fa-list"></i></div>Records List</a>
     </div>
     <div class="nav-item">
@@ -583,6 +592,18 @@ function renderPendingAssetRequests() {
         if (r.status === 'Approved') {
             statusBgColor = '#d1fae5';
             statusTextColor = '#065f46';
+        } else if (r.status === 'approved_by_capital_master') {
+            statusBgColor = '#dbeafe';
+            statusTextColor = '#0c4a6e';
+            displayStatus = 'Awaiting Finance Manager';
+        } else if (r.status === 'approved_by_finance_manager') {
+            statusBgColor = '#fce7f3';
+            statusTextColor = '#831843';
+            displayStatus = 'Awaiting CFO';
+        } else if (r.status === 'approved_by_cfo') {
+            statusBgColor = '#ede9fe';
+            statusTextColor = '#5b21b6';
+            displayStatus = 'Awaiting MD';
         } else if (r.status === 'Denied') {
             statusBgColor = '#fee2e2';
             statusTextColor = '#91221c';
@@ -685,7 +706,7 @@ function submitInlineApproval() {
         localStorage.setItem('capitalAllocations', JSON.stringify(capitalAllocations));
         
         // Update asset request
-        request.status = 'Approved';
+        request.status = 'approved_by_capital_master';
         request.approvedOn = new Date().toLocaleString();
         request.allocatedFund = allocated;
         request.capitalMasterRemarks = capitalMasterRemarks;
@@ -693,14 +714,14 @@ function submitInlineApproval() {
     }
     
     // Send notification to user
-    sendUserNotification(request, 'Approved', 'Your request has been approved and ₹' + allocated.toLocaleString() + ' has been allocated!');
+    sendUserNotification(request, 'PendingFinance', 'Your asset request has been approved by Capital Master with allocated fund ₹' + allocated.toLocaleString() + '. It is now awaiting final approval from Finance Manager.');
     
     // Hide inline form and refresh
     cancelInlineApproval();
     loadRequestDetermination();
     renderCapitalTable();
     
-    alert('Request approved successfully!');
+    alert('Request approved! Awaiting Finance Manager review.');
 }
 
 // Deny Asset Request
@@ -778,18 +799,24 @@ function sendUserNotification(request, status, customMessage) {
     let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
     
     let message = '';
+    let notificationType = 'asset-request';
     
     if (customMessage) {
         message = customMessage;
     } else if (status === 'Approved') {
+        notificationType = 'asset-approved';
         message = `Your asset request (${request.department}) has been APPROVED and funds have been allocated!`;
+    } else if (status === 'PendingFinance') {
+        notificationType = 'asset-pending-finance';
+        message = `Your asset request (${request.department}) has been approved by Capital Master. Awaiting Finance Manager review...`;
     } else {
+        notificationType = 'asset-denied';
         message = `Your asset request (${request.department}) has been DENIED. Reason: ${request.denialReason}`;
     }
     
     userNotifications.push({
         _id: Date.now().toString(),
-        type: 'asset-' + status.toLowerCase(),
+        type: notificationType,
         title: `Asset Request ${status}`,
         message: message,
         requestId: request._id,
@@ -1158,7 +1185,56 @@ function loadUserProfile() {
 
 // Search
 function handleSearch(value) {
-    console.log('Search:', value);
+    if (!value.trim()) {
+        renderPendingAssetRequests();
+        return;
+    }
+    
+    const searchQuery = value.toLowerCase().trim().toUpperCase();
+    const assetRecords = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+    const filteredRecords = assetRecords.filter(r => {
+        return (r.requestId && r.requestId.toString().includes(searchQuery)) ||
+               (r.assetName && r.assetName.toUpperCase().includes(searchQuery)) ||
+               (r.requesterName && r.requesterName.toUpperCase().includes(searchQuery)) ||
+               (r.capitalId && r.capitalId.toUpperCase().includes(searchQuery)) ||
+               (r.department && r.department.toUpperCase().includes(searchQuery));
+    });
+    
+    const tbody = document.getElementById('pendingAssetTableBody');
+    if (filteredRecords.length) {
+        tbody.innerHTML = filteredRecords.slice().reverse().map((r, i) => {
+            const allocatedFund = r.allocatedFund ? '₹' + (r.allocatedFund || 0).toLocaleString() : '—';
+            
+            let statusBgColor = '#fef3c7';
+            let statusTextColor = '#92400e';
+            let displayStatus = r.status;
+            if (r.status === 'Approved') {
+                statusBgColor = '#d1fae5';
+                statusTextColor = '#065f46';
+            } else if (r.status === 'approved_by_capital_master') {
+                statusBgColor = '#dbeafe';
+                statusTextColor = '#0c4a6e';
+                displayStatus = 'Awaiting Finance Manager';
+            } else if (r.status === 'approved_by_finance_manager') {
+                statusBgColor = '#fce7f3';
+                statusTextColor = '#831843';
+                displayStatus = 'Awaiting CFO';
+            } else if (r.status === 'approved_by_cfo') {
+                statusBgColor = '#ede9fe';
+                statusTextColor = '#5b21b6';
+                displayStatus = 'Awaiting MD';
+            } else if (r.status === 'Denied') {
+                statusBgColor = '#fee2e2';
+                statusTextColor = '#91221c';
+            } else if (r.status === 'Pending') {
+                displayStatus = 'Remaining';
+            }
+            
+            return '<tr><td style="font-weight:600;color:var(--navy);">' + (r.requestId || '—') + '</td><td>' + (r.requesterName || '—') + '</td><td>' + (r.assetName || '—') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;">' + (r.department || '—') + '</span></td><td style="text-align:right;color:var(--navy);font-weight:600;">' + (r.assetValue ? '₹' + (r.assetValue || 0).toLocaleString() : '—') + '</td><td style="text-align:right;color:#8b5cf6;font-weight:600;">' + allocatedFund + '</td><td style="font-size:12px;color:var(--muted);">' + (r.remarks || '—') + '</td><td><span style="background:' + statusBgColor + ';color:' + statusTextColor + ';padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">' + displayStatus + '</span></td><td style="text-align:center;"><button onclick="approveCapitalRequest(' + assetRecords.indexOf(r) + ')" style="background:#dbeafe;color:#1d4ed8;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background=\'#bfdbfe\';" onmouseout="this.style.background=\'#dbeafe\';"><i class="fa-solid fa-check"></i> Approve</button></td></tr>';
+        }).join('');
+    } else {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="10">No results for "' + value + '"</td></tr>';
+    }
 }
 
 // Initialize page

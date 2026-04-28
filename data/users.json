@@ -48,5 +48,15 @@
     "phone": "8856010845",
     "role": "requester",
     "status": "active"
+  },
+  {
+    "id": 6,
+    "email": "bhavika@gmail.com",
+    "password": "$2a$10$CHyS1W1jAeJY/iYllDrTaOS/EZvsou9iKZm50TN5Iv7D.i5cA0nK2",
+    "name": "Bhavika Wagh",
+    "department": "IT",
+    "phone": "9307434621",
+    "role": "requester",
+    "status": "active"
   }
 ]
