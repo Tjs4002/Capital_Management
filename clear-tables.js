@@ -22,7 +22,7 @@
             if (page === 'cfo.html') return ['denied_by_cfo'];
             if (page === 'md.html') return ['denied_by_md'];
         }
-        if (tbodyId === 'assetTableBody' || tbodyId === 'allRequestsTableBody') return null;
+        if (tbodyId === 'assetTableBody' || tbodyId === 'allRequestsTableBody') return undefined;
         return undefined;
     }
 
