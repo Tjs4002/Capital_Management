@@ -145,10 +145,6 @@
                 <i class="fa-solid fa-money-bill-wave" style="font-size:16px;"></i>
                 <span>Funds Allocations</span>
             </button>
-            <button onclick="showPanel('requestDeterminationPanel')" style="flex:1;padding:16px 24px;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:.3s;box-shadow:0 4px 12px rgba(16,185,129,.3);display:flex;align-items:center;justify-content:center;gap:10px;min-width:200px;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(16,185,129,.4)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.3)';">
-                <i class="fa-solid fa-list-check" style="font-size:16px;"></i>
-                <span>Request Determination</span>
-            </button>
         </div>
 
     <!-- CAPITAL RECORD FORM (Hidden - Capital Master only approves requests with fund allocation) -->
@@ -248,6 +244,73 @@
                     <tr class="empty-row"><td colspan="9">No asset requests yet.</td></tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div class="full-section">
+        <div class="sc-header">
+            <div class="sc-title">
+                <span class="sc-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                All Requests
+            </div>
+            <span id="allRequestCount" style="background:#e0f2fe;color:#0369a1;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="mini-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Request ID</th>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th style="text-align:center;">Department</th>
+                        <th>Requester Remarks</th>
+                        <th>Request Date</th>
+                        <th style="text-align:left;">Status</th>
+                        <th style="text-align:center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="allRequestsTableBody">
+                    <tr class="empty-row"><td colspan="9">No request history yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- INLINE APPROVAL FORM -->
+    <div id="inlineApprovalPanel" style="display:none;margin-bottom:24px;">
+        <div class="section-card">
+            <div class="sc-header">
+                <div class="sc-title"><i class="fa-solid fa-circle-check" style="background:#10b981;color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;"></i>Approve Request & Allocate Funds</div>
+                <button onclick="cancelInlineApproval()" style="padding:8px 14px;background:#ef4444;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#dc2626';" onmouseout="this.style.background='#ef4444';">Cancel</button>
+            </div>
+            <div style="padding:20px;">
+                <div id="inlineApprovalDetails" style="background:var(--card);padding:16px;border-radius:10px;margin-bottom:20px;font-size:12px;border:1px solid var(--border);">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;">
+                        <div><strong style="color:var(--muted);">Request ID:</strong><br><span id="inlineApprovalRequestId" style="color:var(--navy);font-weight:600;">-</span></div>
+                        <div><strong style="color:var(--muted);">Item:</strong><br><span id="inlineApprovalType" style="color:var(--navy);font-weight:600;">-</span></div>
+                        <div><strong style="color:var(--muted);">Requester:</strong><br><span id="inlineApprovalRequester" style="color:var(--navy);font-weight:600;">-</span></div>
+                        <div><strong style="color:var(--muted);">Quantity:</strong><br><span id="inlineApprovalQty" style="color:var(--navy);font-weight:600;">-</span></div>
+                    </div>
+                    <div style="padding-top:14px;border-top:1px solid var(--border);">
+                        <strong style="color:var(--muted);font-size:11px;">Requester Remark:</strong><br>
+                        <span id="inlineApprovalAssetRemarks" style="color:var(--text);font-size:12px;">-</span>
+                    </div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Allocated Amount (₹) *</label>
+                    <input type="text" id="inlineApprovalAllocated" required placeholder="Enter amount to allocate" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';" oninput="formatCurrencyInput(this);checkFundAvailabilityRealTime();">
+                    <div id="fundAvailabilityStatus" style="margin-top:10px;padding:10px;border-radius:6px;font-weight:600;font-size:12px;display:none;align-items:center;gap:8px;"></div>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Capital Master Remarks</label>
+                    <textarea id="inlineApprovalRemarks" rows="3" placeholder="Add any notes..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;resize:none;font-family:Arial,sans-serif;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';"></textarea>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <button onclick="cancelInlineApproval()" style="padding:10px 24px;background:white;border:1.5px solid var(--border);color:var(--text);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#f8f9fa';" onmouseout="this.style.background='white';">Cancel</button>
+                    <button onclick="submitInlineApproval()" style="padding:10px 24px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#059669';" onmouseout="this.style.background='#10b981';"><i class="fa-solid fa-check"></i> Approve & Allocate</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -841,25 +904,25 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 function showPanel(panelId) {
     document.getElementById('mainDashboard').style.display = 'none';
     const panel = document.getElementById(panelId);
+    if (!panel) {
+        document.getElementById('mainDashboard').style.display = 'block';
+        return;
+    }
     panel.style.display = 'block';
     
     // Load data when opening panels
     if (panelId === 'fundsAllocationPanel') {
         loadFundsAllocations();
-    } else if (panelId === 'requestDeterminationPanel') {
-        loadRequestDetermination();
     }
 }
 
 function hidePanel(panelId) {
+    if (!document.getElementById(panelId)) return;
     document.getElementById(panelId).style.display = 'none';
     document.getElementById('mainDashboard').style.display = 'block';
     
     // Refresh dashboard data when closing panels
-    if (panelId === 'requestDeterminationPanel') {
-        renderPendingAssetRequests();
-        renderCapitalTable();
-    } else if (panelId === 'fundsAllocationPanel') {
+    if (panelId === 'fundsAllocationPanel') {
         renderCapitalTable();
     }
 }
@@ -1278,8 +1341,6 @@ async function renderPendingAssetRequests() {
 
 async function approveAssetRequest(requestId) {
     try {
-        const requestPanel = document.getElementById('requestDeterminationPanel');
-        if (requestPanel) requestPanel.style.display = 'block';
         const authToken = localStorage.getItem('authToken') || localStorage.getItem('token') || '';
 
         const response = await fetch('/api/assets/' + requestId, {
@@ -1332,6 +1393,7 @@ async function submitInlineApproval() {
         if (!response.ok || !data.success) throw new Error(data.error || 'Unable to approve ticket');
         cancelInlineApproval();
         renderPendingAssetRequests();
+        renderAllAssetRequests();
         alert('Ticket approved and sent to Finance Head.');
     } catch (error) {
         alert('Error: ' + error.message);
@@ -1360,6 +1422,7 @@ async function denyAssetRequest(requestId) {
         if (!response.ok || !data.success) throw new Error(data.error || 'Unable to decline ticket');
         cancelInlineApproval();
         renderPendingAssetRequests();
+        renderAllAssetRequests();
         alert('Ticket declined with reason.');
     } catch (error) {
         alert('Error: ' + error.message);
@@ -1387,6 +1450,15 @@ function remarkBlock(label, value) {
 
 function showRequestInfo(index) {
     const r = window.capitalVisibleRecords[index];
+    showRequestInfoRecord(r);
+}
+
+function showAllRequestInfo(index) {
+    const r = window.capitalAllRecords[index];
+    showRequestInfoRecord(r);
+}
+
+function showRequestInfoRecord(r) {
     if (!r) return;
     const amount = Number(r.amount || r.assetValue || r.allocatedFund || 0);
     ensureRequestInfoBubble();
@@ -1438,8 +1510,44 @@ async function renderPendingAssetRequests() {
     }).join('');
 }
 
+function statusBadgeForRequest(r) {
+    const denied = String(r.status || '').indexOf('denied_by_') === 0 || r.status === 'Denied';
+    const approved = r.status === 'approved_by_md' || r.status === 'Approved';
+    const bg = approved ? '#d1fae5' : (denied ? '#fee2e2' : '#fef3c7');
+    const color = approved ? '#065f46' : (denied ? '#991b1b' : '#92400e');
+    return '<span style="background:' + bg + ';color:' + color + ';padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + escapeHtml(r.statusLabel || r.status || 'Pending') + '</span>';
+}
+
+async function renderAllAssetRequests() {
+    const tbody = document.getElementById('allRequestsTableBody');
+    if (!tbody) return;
+    let records = [];
+    try {
+        const response = await fetch('/api/assets', {
+            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '') }
+        });
+        const data = await response.json();
+        if (data.success) records = data.assets || [];
+    } catch (error) {
+        records = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+    }
+    window.capitalAllRecords = records;
+    const countEl = document.getElementById('allRequestCount');
+    if (countEl) countEl.textContent = records.length ? records.length + ' Total' : '';
+    if (!records.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No request history yet.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = records.map((r, i) => {
+        return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td><td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + statusBadgeForRequest(r) + '</td><td style="text-align:center;"><button onclick="showAllRequestInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></td></tr>';
+    }).join('');
+}
+
 // Initialize page
+const oldRequestDeterminationPanel = document.getElementById('requestDeterminationPanel');
+if (oldRequestDeterminationPanel) oldRequestDeterminationPanel.remove();
 renderPendingAssetRequests();
+renderAllAssetRequests();
 
 // Logout logic
 function handleLogout() {
@@ -1456,5 +1564,6 @@ function logout() {
     }
 }
 </script>
+<script src="clear-tables.js"></script>
 </body>
 </html>

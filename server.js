@@ -388,6 +388,26 @@ app.put('/api/assets/:id', authMiddleware, (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+app.delete('/api/assets/bulk', authMiddleware, (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids.map(String) : [];
+    const statuses = Array.isArray(req.body.statuses) ? req.body.statuses.map(String) : [];
+    const canClearAll = ['admin', 'capital_master', 'finance_head', 'finance_manager', 'cfo', 'md'].includes(req.user.role);
+
+    let assets = readFile(ASSETS_FILE);
+    const beforeCount = assets.length;
+    assets = assets.filter(asset => {
+      const matchesId = ids.length ? ids.some(id => findAssetIndex([asset], id) !== -1) : true;
+      const matchesStatus = statuses.length ? statuses.includes(asset.status) : true;
+      const visibleToUser = canClearAll || asset.user_id == req.user.id;
+      return !(matchesId && matchesStatus && visibleToUser);
+    });
+
+    writeFile(ASSETS_FILE, assets);
+    res.json({ success: true, deleted: beforeCount - assets.length });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
 app.delete('/api/assets/:id', authMiddleware, (req, res) => {
   try {
     let assets = readFile(ASSETS_FILE);

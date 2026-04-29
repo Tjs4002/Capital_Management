@@ -484,7 +484,31 @@ function openRejectModal(requestId) {
 }
 
 // Submit approve request
+function canCfoAct() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const role = (currentUser.role || '').toLowerCase();
+    if (role && role !== 'cfo' && role !== 'admin') {
+        alert('Please sign in as CFO to approve or decline this ticket.');
+        return false;
+    }
+    return true;
+}
+
+function handleCfoActionResponse(res, fallbackMessage) {
+    return res.json().catch(() => ({})).then(data => {
+        if (!res.ok) {
+            if (res.status === 403) {
+                throw new Error('Please sign in as CFO to approve or decline this ticket.');
+            }
+            throw new Error(data.error || fallbackMessage);
+        }
+        return data;
+    });
+}
+
 function submitApproveRequest() {
+    if (!canCfoAct()) return;
+
     const remarks = document.getElementById('cfoRemarks').value.trim();
     const requestId = currentRequestIdForApproval;
     
@@ -497,20 +521,13 @@ function submitApproveRequest() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '')
         },
         body: JSON.stringify({
             remarks: remarks
         })
     })
-    .then(res => {
-        if (!res.ok) {
-            return res.text().then(text => {
-                throw new Error(`HTTP ${res.status}: ${text}`);
-            });
-        }
-        return res.json();
-    })
+    .then(res => handleCfoActionResponse(res, 'Failed to approve request'))
     .then(data => {
         if (data.success) {
             alert('✓ Request finally approved successfully');
@@ -522,12 +539,14 @@ function submitApproveRequest() {
     })
     .catch(err => {
         console.error('Approval Error:', err);
-        alert('Error: ' + err.message);
+        alert(err.message.startsWith('Please sign in as') ? err.message : 'Error: ' + err.message);
     });
 }
 
 // Submit reject request
 function submitRejectRequest() {
+    if (!canCfoAct()) return;
+
     const reason = document.getElementById('rejectionReason').value.trim();
     
     if (!reason) {
@@ -546,20 +565,13 @@ function submitRejectRequest() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '')
         },
         body: JSON.stringify({
             cfoDenialReason: reason
         })
     })
-    .then(res => {
-        if (!res.ok) {
-            return res.text().then(text => {
-                throw new Error(`HTTP ${res.status}: ${text}`);
-            });
-        }
-        return res.json();
-    })
+    .then(res => handleCfoActionResponse(res, 'Failed to reject request'))
     .then(data => {
         if (data.success) {
             alert('✓ Request rejected and user notified');
@@ -571,7 +583,7 @@ function submitRejectRequest() {
     })
     .catch(err => {
         console.error('Rejection Error:', err);
-        alert('Error: ' + err.message);
+        alert(err.message.startsWith('Please sign in as') ? err.message : 'Error: ' + err.message);
     });
 }
 
@@ -803,9 +815,42 @@ function validateAndSendContactForm() {
     closeModal('contactModal');
 }
 
+function createAllRequestsSection() {
+    if (document.getElementById('allRequestsTableBody')) return;
+    const footer = document.querySelector('.about-footer');
+    if (!footer) return;
+    footer.insertAdjacentHTML('beforebegin', '<div class="full-section" style="margin-top:24px;"><div class="sc-header"><div class="sc-title"><span class="sc-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fa-solid fa-clock-rotate-left"></i></span>All Requests</div><span id="allRequestCount" style="background:#e0f2fe;color:#0369a1;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;"></span></div><div style="overflow-x:auto;"><table class="mini-table"><thead><tr><th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th></tr></thead><tbody id="allRequestsTableBody"><tr class="empty-row"><td colspan="9">No request history yet.</td></tr></tbody></table></div></div>');
+}
+
+async function renderAllRequests() {
+    createAllRequestsSection();
+    const tbody = document.getElementById('allRequestsTableBody');
+    if (!tbody) return;
+    let records = [];
+    try {
+        const response = await fetch('/api/assets', {
+            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '') }
+        });
+        const data = await response.json();
+        if (data.success) records = data.assets || [];
+    } catch (error) {
+        records = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+    }
+    window.cfoAllRecords = records;
+    document.getElementById('allRequestCount').textContent = records.length ? records.length + ' Total' : '';
+    tbody.innerHTML = records.length ? records.map((r, i) => compactRow(r, i, 'cfoAllRecords', '')).join('') : '<tr class="empty-row"><td colspan="9">No request history yet.</td></tr>';
+}
+
+const baseInitializePage = initializePage;
+initializePage = function() {
+    baseInitializePage();
+    renderAllRequests();
+};
+
 // Initialize on page load
 window.addEventListener('load', initializePage);
 </script>
+<script src="clear-tables.js"></script>
 
 </body>
 </html>
