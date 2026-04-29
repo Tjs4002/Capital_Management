@@ -7,7 +7,8 @@
     "role": "admin",
     "department": "Management",
     "phone": "",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 2,
@@ -17,7 +18,8 @@
     "role": "capital_master",
     "department": "Finance",
     "phone": "",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 3,
@@ -27,7 +29,8 @@
     "role": "requester",
     "department": "Operations",
     "phone": "",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 4,
@@ -37,7 +40,8 @@
     "department": "IT",
     "phone": "9096851337",
     "role": "requester",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 5,
@@ -47,7 +51,8 @@
     "department": "IT",
     "phone": "8856010845",
     "role": "requester",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 6,
@@ -57,7 +62,8 @@
     "department": "IT",
     "phone": "9307434621",
     "role": "requester",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 7,
@@ -67,7 +73,8 @@
     "department": "Sales",
     "phone": "9096851337",
     "role": "requester",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 8,
@@ -77,7 +84,8 @@
     "department": "Sales",
     "phone": "9096851337",
     "role": "requester",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   },
   {
     "id": 9,
@@ -87,6 +95,7 @@
     "department": "Human Resources",
     "phone": "9096851337",
     "role": "requester",
-    "status": "active"
+    "status": "active",
+    "isVerified": true
   }
 ]

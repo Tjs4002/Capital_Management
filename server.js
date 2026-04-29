@@ -30,9 +30,9 @@ function initDataFiles() {
     const requesterPassword = bcryptjs.hashSync('requester123', 10);
 
     fs.writeFileSync(USERS_FILE, JSON.stringify([
-      { id: 1, email: 'admin@capital.com', password: adminPassword, name: 'Admin User', role: 'admin', department: 'Management', phone: '', status: 'active' },
-      { id: 2, email: 'master@capital.com', password: masterPassword, name: 'Capital Master', role: 'capital_master', department: 'Finance', phone: '', status: 'active' },
-      { id: 3, email: 'requester@capital.com', password: requesterPassword, name: 'Asset Requester', role: 'requester', department: 'Operations', phone: '', status: 'active' }
+      { id: 1, email: 'admin@capital.com', password: adminPassword, name: 'Admin User', role: 'admin', department: 'Management', phone: '', status: 'active', isVerified: true },
+      { id: 2, email: 'master@capital.com', password: masterPassword, name: 'Capital Master', role: 'capital_master', department: 'Finance', phone: '', status: 'active', isVerified: true },
+      { id: 3, email: 'requester@capital.com', password: requesterPassword, name: 'Asset Requester', role: 'requester', department: 'Operations', phone: '', status: 'active', isVerified: true }
     ], null, 2));
   }
 
