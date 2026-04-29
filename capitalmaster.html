@@ -240,7 +240,7 @@
                         <th>Department</th>
                         <th>Quantity</th>
                         <th>Date</th>
-                        <th>Required Fund</th>
+                        <th>Amount Allocation</th>
                         <th style="text-align:center;">Status</th>
                     </tr>
                 </thead>
@@ -423,8 +423,8 @@
                         </div>
                     </div>
                     <div style="margin-bottom:16px;">
-                        <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Required Amount (₹) *</label>
-                        <input type="text" id="inlineApprovalAllocated" placeholder="Enter amount in rupees" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';" oninput="formatCurrencyInput(this);checkFundAvailabilityRealTime();">
+                        <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Allocated Amount (₹) *</label>
+                        <input type="text" id="inlineApprovalAllocated" required placeholder="Enter amount to allocate" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';" oninput="formatCurrencyInput(this);checkFundAvailabilityRealTime();">
                         <div id="fundAvailabilityStatus" style="margin-top:10px;padding:10px;border-radius:6px;font-weight:600;font-size:12px;display:none;align-items:center;gap:8px;"></div>
                     </div>
                     <div style="margin-bottom:20px;">
@@ -1270,7 +1270,7 @@ async function renderPendingAssetRequests() {
             '<td><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + (r.department || '-') + '</span></td>' +
             '<td style="text-align:center;font-weight:600;color:var(--accent);">' + (r.qty || r.quantity || '-') + '</td>' +
             '<td style="color:var(--muted);font-size:12px;">' + (r.requestDate || '-') + '</td>' +
-            '<td style="font-weight:600;color:#059669;">₹' + amount.toLocaleString() + '</td>' +
+            '<td style="font-weight:600;color:#059669;">' + (amount > 0 ? '₹' + amount.toLocaleString() : 'To be allocated') + '</td>' +
             '<td style="text-align:center;"><button onclick="approveAssetRequest(\'' + r.id + '\')" style="padding:6px 10px;background:#10b981;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;">Approve</button><button onclick="denyAssetRequest(\'' + r.id + '\')" style="padding:6px 10px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Decline</button></td>' +
         '</tr>';
     }).join('');
@@ -1294,7 +1294,7 @@ async function approveAssetRequest(requestId) {
         document.getElementById('inlineApprovalRequester').textContent = data.asset.requestedBy || data.asset.requesterName || '-';
         document.getElementById('inlineApprovalQty').textContent = Number(data.asset.amount || data.asset.assetValue || 0).toLocaleString();
         document.getElementById('inlineApprovalAssetRemarks').textContent = data.asset.remarks || '-';
-        document.getElementById('inlineApprovalAllocated').value = data.asset.amount || data.asset.assetValue || '';
+        document.getElementById('inlineApprovalAllocated').value = '';
         document.getElementById('inlineApprovalRemarks').value = '';
         document.getElementById('inlineApprovalPanel').style.display = 'block';
         document.getElementById('inlineApprovalPanel').scrollIntoView({ behavior: 'smooth' });

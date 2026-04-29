@@ -257,7 +257,13 @@ function updateTicket(req, res, options) {
       if (options.remarksField) asset[options.remarksField] = remarks;
       if (options.roleField) asset[options.roleField] = req.user.id;
       if (options.dateField) asset[options.dateField] = new Date().toISOString();
-      if (options.allocation) asset.allocated_fund = Number(req.body.allocatedFund || req.body.allocated_fund || asset.amount || asset.asset_value || 0);
+      if (options.allocation) {
+        const allocatedFund = Number(req.body.allocatedFund || req.body.allocated_fund || 0);
+        if (allocatedFund <= 0) return res.status(400).json({ error: 'Allocated amount is required' });
+        asset.allocated_fund = allocatedFund;
+        asset.amount = allocatedFund;
+        asset.asset_value = allocatedFund;
+      }
     }
 
     asset.status = options.to;
@@ -315,8 +321,8 @@ app.post('/api/assets', authMiddleware, (req, res) => {
     const department = (req.body.department || req.body.capitalType || '').trim();
     const remarks = (req.body.remarks || req.body.assetDescription || '').trim();
 
-    if (!itemName || quantity <= 0 || amount <= 0) {
-      return res.status(400).json({ error: 'Item name, quantity, and amount are required' });
+    if (!itemName || quantity <= 0) {
+      return res.status(400).json({ error: 'Item name and quantity are required' });
     }
 
     let assets = readFile(ASSETS_FILE);
