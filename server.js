@@ -353,6 +353,59 @@ app.post('/api/assets', authMiddleware, (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+app.put('/api/assets/:id', authMiddleware, (req, res) => {
+  try {
+    let assets = readFile(ASSETS_FILE);
+    const assetIndex = findAssetIndex(assets, req.params.id);
+    if (assetIndex === -1) return res.status(404).json({ error: 'Ticket not found' });
+
+    const asset = assets[assetIndex];
+    if (req.user.role !== 'admin' && asset.user_id !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
+    if (!['pending_capital_master', 'pending'].includes(asset.status)) {
+      return res.status(409).json({ error: 'Only tickets waiting for Capital Master can be edited' });
+    }
+
+    const itemName = (req.body.itemName || req.body.assetName || '').trim();
+    const quantity = Number(req.body.quantity || req.body.qty || 0);
+    const department = (req.body.department || req.body.capitalType || '').trim();
+    const remarks = (req.body.remarks || req.body.assetDescription || '').trim();
+
+    if (!itemName || quantity <= 0) return res.status(400).json({ error: 'Item name and quantity are required' });
+
+    asset.item_name = itemName;
+    asset.asset_name = itemName;
+    asset.quantity = quantity;
+    asset.department = department;
+    asset.capital_type = department || 'General';
+    asset.remarks = remarks;
+    asset.asset_description = remarks;
+    asset.request_date = req.body.requestDate || asset.request_date;
+    asset.updated_on = new Date().toISOString();
+
+    assets[assetIndex] = asset;
+    writeFile(ASSETS_FILE, assets);
+    res.json({ success: true, message: 'Ticket updated', asset: normalizeAsset(asset) });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/assets/:id', authMiddleware, (req, res) => {
+  try {
+    let assets = readFile(ASSETS_FILE);
+    const assetIndex = findAssetIndex(assets, req.params.id);
+    if (assetIndex === -1) return res.status(404).json({ error: 'Ticket not found' });
+
+    const asset = assets[assetIndex];
+    if (req.user.role !== 'admin' && asset.user_id !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
+    if (!['pending_capital_master', 'pending'].includes(asset.status)) {
+      return res.status(409).json({ error: 'Only tickets waiting for Capital Master can be deleted' });
+    }
+
+    assets.splice(assetIndex, 1);
+    writeFile(ASSETS_FILE, assets);
+    res.json({ success: true, message: 'Ticket deleted' });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
 app.post('/api/assets/:id/approve', authMiddleware, (req, res) => updateTicket(req, res, {
   roles: ['capital_master'],
   from: 'pending_capital_master',

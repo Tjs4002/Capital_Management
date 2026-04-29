@@ -205,13 +205,11 @@
                     <tr>
                         <th>#</th>
                         <th>Request ID</th>
-                        <th>Requester Name</th>
-                        <th>Request Date</th>
+                        <th>Item Name</th>
                         <th>Quantity</th>
-                        <th>Request To</th>
                         <th style="text-align:center;">Department</th>
                         <th>Requester Remarks</th>
-                        <th>Capital Master Remarks</th>
+                        <th>Request Date</th>
                         <th style="text-align:left;">Status</th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
@@ -221,6 +219,17 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div id="requestInfoBubble" style="display:none;position:fixed;right:24px;bottom:24px;width:min(420px,calc(100vw - 48px));max-height:70vh;overflow:auto;background:var(--card);border:1px solid var(--border);box-shadow:0 18px 45px rgba(15,23,42,.18);border-radius:12px;z-index:500;padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+            <div>
+                <div id="infoBubbleTitle" style="font-family:'Syne',sans-serif;font-weight:800;color:var(--navy);font-size:15px;">Request Info</div>
+                <div id="infoBubbleSub" style="font-size:11px;color:var(--muted);margin-top:2px;"></div>
+            </div>
+            <button onclick="closeInfoBubble()" aria-label="Close info" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:white;color:var(--muted);cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="infoBubbleBody" style="font-size:12px;color:var(--text);line-height:1.5;"></div>
     </div>
 
     <!-- FOOTER -->
@@ -272,6 +281,21 @@ const today = new Date();
 document.getElementById('pageDate').textContent = today.getDate();
 const monthYear = today.toLocaleString('en-IN', { month: 'short', year: 'numeric' });
 document.getElementById('pageDay').textContent = monthYear;
+let assetRecordsCache = [];
+
+function getAuthToken() {
+    return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+}
+
+function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function(char) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+}
+
+function canRequesterModify(record) {
+    return ['pending_capital_master', 'pending'].includes(record.status);
+}
 
 // Asset Request Form Submission
 document.getElementById("assetForm").addEventListener("submit", async function(e){
@@ -291,23 +315,28 @@ document.getElementById("assetForm").addEventListener("submit", async function(e
     }
 
     const submitBtn = this.querySelector('button[type="submit"]');
+    const editRecordId = this.getAttribute('data-edit-record-id');
+    const isEditing = this.getAttribute('data-is-editing') === 'true' && editRecordId;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Submitting';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>' + (isEditing ? 'Updating' : 'Submitting');
 
     try {
-        const response = await fetch('/api/assets', {
-            method: 'POST',
+        const response = await fetch(isEditing ? '/api/assets/' + editRecordId : '/api/assets', {
+            method: isEditing ? 'PUT' : 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+                'Authorization': 'Bearer ' + getAuthToken()
             },
             body: JSON.stringify(payload)
         });
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to submit request');
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to save request');
 
-        alert('Ticket created successfully! Ticket ID: ' + data.ticketId + '. Object ID: ' + data.objectId + '. Sent to Capital Master.');
+        alert(isEditing ? 'Ticket updated successfully.' : 'Ticket created successfully! Ticket ID: ' + data.ticketId + '. Object ID: ' + data.objectId + '. Sent to Capital Master.');
         this.reset();
+        this.setAttribute('data-is-editing', 'false');
+        this.removeAttribute('data-edit-record-id');
+        document.getElementById('cancelBtn').style.display = 'none';
         renderAssetTable();
     } catch (error) {
         alert('Error: ' + error.message);
@@ -351,7 +380,7 @@ async function renderAssetTable() {
     let records = [];
     try {
         const response = await fetch('/api/assets', {
-            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+            headers: { 'Authorization': 'Bearer ' + getAuthToken() }
         });
         const data = await response.json();
         if (data.success) records = data.assets || [];
@@ -360,17 +389,21 @@ async function renderAssetTable() {
     }
 
     if (!records.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="11">No capital requests yet.</td></tr>';
+        assetRecordsCache = [];
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet.</td></tr>';
         return;
     }
+    assetRecordsCache = records;
 
     tbody.innerHTML = records.map(function(r, i) {
         const denied = String(r.status || '').indexOf('denied_by_') === 0 || r.status === 'Denied';
         const approved = r.status === 'approved_by_md' || r.status === 'Approved';
         const statusColor = approved ? '#d1fae5' : (denied ? '#fee2e2' : '#fef3c7');
         const statusTextColor = approved ? '#065f46' : (denied ? '#91221c' : '#92400e');
-        const amount = Number(r.amount || r.assetValue || 0);
         const statusBadge = '<span class="badge badge-pending" style="background:' + statusColor + ';color:' + statusTextColor + ';">' + (r.statusLabel || r.status || 'Pending Capital Master') + '</span>';
+        const canModify = canRequesterModify(r);
+        const editButton = canModify ? '<button title="Edit request" onclick="editAssetRecord(' + i + ')" style="width:30px;height:30px;border:none;border-radius:7px;background:#dbeafe;color:#1d4ed8;cursor:pointer;"><i class="fa-solid fa-pen"></i></button>' : '';
+        const deleteButton = canModify ? '<button title="Delete request" onclick="deleteAssetRecord(' + i + ')" style="width:30px;height:30px;border:none;border-radius:7px;background:#fee2e2;color:#991b1b;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>' : '';
         return '<tr>' +
             '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
             '<td><strong style="color:var(--navy);">' + (r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + (r.objectId || 'Object ID pending') + '</span></td>' +
@@ -445,6 +478,133 @@ function deleteAssetRecord(index) {
         renderAssetTable();
         alert('Request deleted successfully!');
     }
+}
+
+// Current backend-backed table and actions.
+async function renderAssetTable() {
+    const tbody = document.getElementById('assetTableBody');
+    let records = [];
+    try {
+        const response = await fetch('/api/assets', {
+            headers: { 'Authorization': 'Bearer ' + getAuthToken() }
+        });
+        const data = await response.json();
+        if (data.success) records = data.assets || [];
+    } catch (error) {
+        records = [];
+    }
+
+    assetRecordsCache = records;
+    if (!records.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = records.map(function(r, i) {
+        const denied = String(r.status || '').indexOf('denied_by_') === 0 || r.status === 'Denied';
+        const approved = r.status === 'approved_by_md' || r.status === 'Approved';
+        const statusColor = approved ? '#d1fae5' : (denied ? '#fee2e2' : '#fef3c7');
+        const statusTextColor = approved ? '#065f46' : (denied ? '#91221c' : '#92400e');
+        const statusBadge = '<span class="badge badge-pending" style="background:' + statusColor + ';color:' + statusTextColor + ';">' + escapeHtml(r.statusLabel || r.status || 'Pending Capital Master') + '</span>';
+        const canModify = canRequesterModify(r);
+        const editButton = canModify ? '<button title="Edit request" onclick="editAssetRecord(' + i + ')" style="width:30px;height:30px;border:none;border-radius:7px;background:#dbeafe;color:#1d4ed8;cursor:pointer;"><i class="fa-solid fa-pen"></i></button>' : '';
+        const deleteButton = canModify ? '<button title="Delete request" onclick="deleteAssetRecord(' + i + ')" style="width:30px;height:30px;border:none;border-radius:7px;background:#fee2e2;color:#991b1b;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>' : '';
+
+        return '<tr>' +
+            '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
+            '<td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || 'Object ID pending') + '</span></td>' +
+            '<td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td>' +
+            '<td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td>' +
+            '<td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-block;">' + escapeHtml(r.department || '-') + '</span></td>' +
+            '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' +
+            '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;">' + editButton + deleteButton + '<button title="More info" onclick="showRequestInfo(' + i + ')" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function editAssetRecord(index) {
+    const record = assetRecordsCache[index];
+    if (!record) {
+        alert('Record not found!');
+        return;
+    }
+    if (!canRequesterModify(record)) {
+        alert('Only requests waiting for Capital Master can be edited.');
+        return;
+    }
+
+    document.getElementById('itemNameInput').value = record.itemName || record.assetName || '';
+    document.getElementById('quantityInput').value = record.qty || record.quantity || '';
+    document.getElementById('departmentInput').value = record.department || '';
+    document.getElementById('requestDateInput').value = record.requestDate || '';
+    document.getElementById('remarksInput').value = record.remarks || '';
+    document.getElementById('assetForm').setAttribute('data-edit-record-id', record.id);
+    document.getElementById('assetForm').setAttribute('data-is-editing', 'true');
+    document.getElementById('cancelBtn').style.display = 'block';
+    document.querySelector('#assetForm button[type="submit"]').innerHTML = '<i class="fa-solid fa-save" style="margin-right:6px;"></i>Update Request';
+    document.querySelector('.section-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function deleteAssetRecord(index) {
+    const record = assetRecordsCache[index];
+    if (!record) {
+        alert('Record not found!');
+        return;
+    }
+    if (!canRequesterModify(record)) {
+        alert('Only requests waiting for Capital Master can be deleted.');
+        return;
+    }
+    if (!confirm('Are you sure you want to delete this request?')) return;
+
+    try {
+        const response = await fetch('/api/assets/' + record.id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getAuthToken() }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to delete request');
+        closeInfoBubble();
+        renderAssetTable();
+        alert('Request deleted successfully!');
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+function detailRow(label, value) {
+    return '<div style="display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--border);padding:7px 0;"><span style="color:var(--muted);font-weight:700;">' + label + '</span><span style="text-align:right;">' + escapeHtml(value || '-') + '</span></div>';
+}
+
+function remarkBlock(label, value) {
+    return '<div style="margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;"><div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:4px;">' + label + '</div><div>' + escapeHtml(value || '-') + '</div></div>';
+}
+
+function showRequestInfo(index) {
+    const r = assetRecordsCache[index];
+    if (!r) return;
+    const amount = Number(r.amount || r.assetValue || 0);
+    document.getElementById('infoBubbleTitle').textContent = r.itemName || r.assetName || 'Request Info';
+    document.getElementById('infoBubbleSub').textContent = (r.ticketId || r.requestId || '-') + ' · ' + (r.objectId || '-');
+    document.getElementById('infoBubbleBody').innerHTML =
+        detailRow('Requester', r.requesterName || r.requestedBy) +
+        detailRow('Email', r.requesterEmail) +
+        detailRow('Next Step', r.requestTo) +
+        detailRow('Allocated Amount', amount ? 'Rs. ' + amount.toLocaleString() : 'Not allocated yet') +
+        detailRow('Status', r.statusLabel || r.status) +
+        '<div style="font-family:\'Syne\',sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
+        remarkBlock('Requester', r.remarks) +
+        remarkBlock('Capital Master', r.capitalMasterRemarks || r.denialReason) +
+        remarkBlock('Finance', r.financeManagerRemarks || r.financeManagerDenialReason) +
+        remarkBlock('CFO', r.cfoRemarks || r.cfoDenialReason) +
+        remarkBlock('MD', r.mdRemarks || r.mdDenialReason);
+    document.getElementById('requestInfoBubble').style.display = 'block';
+}
+
+function closeInfoBubble() {
+    document.getElementById('requestInfoBubble').style.display = 'none';
 }
 
 // Modal logic
@@ -621,6 +781,17 @@ function handleSearch(q) {
     } else {
         tbody.innerHTML = '<tr class="empty-row"><td colspan="11">No results for "' + q + '"</td></tr>';
     }
+}
+
+function handleSearch(q) {
+    const query = q.trim().toLowerCase();
+    if (!query) {
+        renderAssetTable();
+        return;
+    }
+    document.querySelectorAll('#assetTableBody tr').forEach(function(row) {
+        row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+    });
 }
 
 // Logout logic
