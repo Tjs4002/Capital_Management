@@ -1366,6 +1366,78 @@ async function denyAssetRequest(requestId) {
     }
 }
 
+function ensureRequestInfoBubble() {
+    if (document.getElementById('requestInfoBubble')) return;
+    document.body.insertAdjacentHTML('beforeend', '<div id="requestInfoBubble" style="display:none;position:fixed;right:24px;bottom:24px;width:min(420px,calc(100vw - 48px));max-height:70vh;overflow:auto;background:var(--card);border:1px solid var(--border);box-shadow:0 18px 45px rgba(15,23,42,.18);border-radius:12px;z-index:500;padding:18px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;"><div><div id="infoBubbleTitle" style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);font-size:15px;">Request Info</div><div id="infoBubbleSub" style="font-size:11px;color:var(--muted);margin-top:2px;"></div></div><button onclick="closeInfoBubble()" aria-label="Close info" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:white;color:var(--muted);cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></div><div id="infoBubbleBody" style="font-size:12px;color:var(--text);line-height:1.5;"></div></div>');
+}
+
+function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function(char) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+}
+
+function detailRow(label, value) {
+    return '<div style="display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--border);padding:7px 0;"><span style="color:var(--muted);font-weight:700;">' + label + '</span><span style="text-align:right;">' + escapeHtml(value || '-') + '</span></div>';
+}
+
+function remarkBlock(label, value) {
+    return '<div style="margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;"><div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:4px;">' + label + '</div><div>' + escapeHtml(value || '-') + '</div></div>';
+}
+
+function showRequestInfo(index) {
+    const r = window.capitalVisibleRecords[index];
+    if (!r) return;
+    const amount = Number(r.amount || r.assetValue || r.allocatedFund || 0);
+    ensureRequestInfoBubble();
+    document.getElementById('infoBubbleTitle').textContent = r.itemName || r.assetName || 'Request Info';
+    document.getElementById('infoBubbleSub').textContent = (r.ticketId || r.requestId || '-') + ' · ' + (r.objectId || '-');
+    document.getElementById('infoBubbleBody').innerHTML =
+        detailRow('Requester', r.requesterName || r.requestedBy) +
+        detailRow('Email', r.requesterEmail) +
+        detailRow('Next Step', r.requestTo) +
+        detailRow('Allocated Amount', amount ? 'Rs. ' + amount.toLocaleString() : 'Not allocated yet') +
+        detailRow('Status', r.statusLabel || r.status) +
+        '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
+        remarkBlock('Requester', r.remarks) +
+        remarkBlock('Capital Master', r.capitalMasterRemarks || r.denialReason) +
+        remarkBlock('Finance', r.financeManagerRemarks || r.financeManagerDenialReason) +
+        remarkBlock('CFO', r.cfoRemarks || r.cfoDenialReason) +
+        remarkBlock('MD', r.mdRemarks || r.mdDenialReason);
+    document.getElementById('requestInfoBubble').style.display = 'block';
+}
+
+function closeInfoBubble() {
+    const bubble = document.getElementById('requestInfoBubble');
+    if (bubble) bubble.style.display = 'none';
+}
+
+async function renderPendingAssetRequests() {
+    const tbody = document.getElementById('pendingAssetTableBody');
+    const table = tbody.closest('table');
+    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+    let records = [];
+    try {
+        const response = await fetch('/api/assets/pending-capital-master', {
+            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '') }
+        });
+        const data = await response.json();
+        if (data.success) records = data.assets || [];
+    } catch (error) {
+        records = JSON.parse(localStorage.getItem('assetRecords') || '[]').filter(r => r.status === 'Pending');
+    }
+    window.capitalVisibleRecords = records;
+    document.getElementById('pendingCount').textContent = records.length ? records.length + ' Remaining' : 'All Processed';
+    if (!records.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No tickets waiting for Capital Master.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = records.map((r, i) => {
+        const status = '<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + escapeHtml(r.statusLabel || 'Pending Capital Master') + '</span>';
+        return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td><td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + status + '</td><td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;"><button onclick="approveAssetRequest(\'' + r.id + '\')" title="Approve" style="width:30px;height:30px;border:none;border-radius:7px;background:#dcfce7;color:#15803d;cursor:pointer;"><i class="fa-solid fa-check"></i></button><button onclick="denyAssetRequest(\'' + r.id + '\')" title="Decline" style="width:30px;height:30px;border:none;border-radius:7px;background:#fee2e2;color:#991b1b;cursor:pointer;"><i class="fa-solid fa-ban"></i></button><button onclick="showRequestInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td></tr>';
+    }).join('');
+}
+
 // Initialize page
 renderPendingAssetRequests();
 

@@ -294,17 +294,14 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>ID</th>
-                        <th>Capital Type</th>
-                        <th>Details</th>
-                        <th>Date</th>
+                        <th>Request ID</th>
+                        <th>Item Name</th>
                         <th>Quantity</th>
-                        <th>Allocated Fund</th>
-                        <th>Required Fund</th>
-                        <th>Remaining Fund</th>
-                        <th>Status</th>
+                        <th style="text-align:center;">Department</th>
                         <th>Requester Remarks</th>
-                        <th>Capital Master Remarks</th>
+                        <th>Request Date</th>
+                        <th style="text-align:left;">Status</th>
+                        <th style="text-align:center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="assetTableBody">
@@ -1577,6 +1574,68 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ─────────────── INIT ─────────────── */
+let dashboardAssetRecords = [];
+
+function dashboardAuthToken() {
+    return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+}
+
+function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function(char) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+}
+
+function dashboardStatusBadge(record) {
+    const status = record.statusLabel || record.status || 'Pending';
+    const denied = String(record.status || '').indexOf('denied_by_') === 0;
+    const approved = record.status === 'approved_by_md' || record.status === 'Approved';
+    const bg = approved ? '#d1fae5' : (denied ? '#fee2e2' : '#fef3c7');
+    const color = approved ? '#065f46' : (denied ? '#991b1b' : '#92400e');
+    return '<span style="background:' + bg + ';color:' + color + ';padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + escapeHtml(status) + '</span>';
+}
+
+function dashboardInfo(index) {
+    const r = dashboardAssetRecords[index];
+    if (!r) return;
+    const key = 'dashboard_req_' + (r.id || r.requestId || index);
+    window.requestDetailsMap = window.requestDetailsMap || {};
+    window.requestDetailsMap[key] = r;
+    openRequestDetailsModal(key);
+}
+
+async function renderAssetTable() {
+    const tbody = document.getElementById('assetTableBody');
+    const table = tbody.closest('table');
+    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+    try {
+        const response = await fetch('/api/assets', {
+            headers: { 'Authorization': 'Bearer ' + dashboardAuthToken() }
+        });
+        const data = await response.json();
+        dashboardAssetRecords = data.success ? (data.assets || []) : [];
+    } catch (error) {
+        dashboardAssetRecords = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+    }
+    if (!dashboardAssetRecords.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet. <a href="asset.html">Submit one</a></td></tr>';
+        return;
+    }
+    tbody.innerHTML = dashboardAssetRecords.map(function(r, i) {
+        return '<tr>' +
+            '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
+            '<td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td>' +
+            '<td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td>' +
+            '<td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td>' +
+            '<td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td>' +
+            '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' +
+            '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td>' +
+            '<td>' + dashboardStatusBadge(r) + '</td>' +
+            '<td style="text-align:center;"><button onclick="dashboardInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></td>' +
+        '</tr>';
+    }).join('');
+}
+
 renderStats();
 renderNotifications();
 renderRecentTable();
