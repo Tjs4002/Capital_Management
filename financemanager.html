@@ -378,15 +378,68 @@ document.getElementById('pageDay').textContent = monthYear;
 
 // Initialize page
 function initializePage() {
+    loadUserProfile();
     loadPendingRequests();
     loadApprovedRequests();
     loadDeniedRequests();
     updateStatusCounts();
 }
 
+function getRoleLabel(role) {
+    const labels = {
+        admin: 'Admin',
+        requester: 'Requester',
+        capital_master: 'Capital Master',
+        finance_head: 'Finance Manager',
+        finance_manager: 'Finance Manager',
+        cfo: 'CFO',
+        md: 'MD'
+    };
+    return labels[role] || role || 'User';
+}
+
+async function loadUserProfile() {
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const authToken = localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+
+    if (authToken) {
+        try {
+            const payload = JSON.parse(atob(authToken.split('.')[1]));
+            currentUser = { ...currentUser, ...payload };
+            const response = await fetch('/api/users/' + payload.id, {
+                headers: { 'Authorization': 'Bearer ' + authToken }
+            });
+            const data = await response.json();
+            if (data.success && data.user) {
+                currentUser = { ...currentUser, ...data.user };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+        } catch (error) {
+            console.warn('Could not refresh user profile:', error);
+        }
+    }
+
+    const displayName = currentUser.name || 'Finance Manager';
+    const displayEmail = currentUser.email || '';
+    const roleLabel = getRoleLabel(currentUser.role);
+    const initials = displayName.split(' ').filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'FM';
+
+    document.getElementById('userAvatarDash').textContent = initials;
+    document.getElementById('userNameDash').textContent = displayName;
+    document.getElementById('userRoleDash').textContent = roleLabel;
+    document.getElementById('dropdownUserName').textContent = displayName;
+    document.getElementById('dropdownUserEmail').textContent = displayEmail;
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('userName').textContent = displayName;
+    document.getElementById('userRole').textContent = roleLabel;
+    document.getElementById('userEmail').textContent = displayEmail;
+    document.getElementById('userUsername').textContent = currentUser.username || displayEmail || displayName;
+    document.getElementById('userLoginTime').textContent = currentUser.loginTime || new Date().toLocaleString();
+}
+
 // Load pending requests from backend
 function loadPendingRequests() {
-    fetch('/api/assets/pending-capital-master', {
+    fetch('/api/assets/pending-finance-manager', {
         headers: {
             'Authorization': 'Bearer ' + localStorage.getItem('authToken')
         }
@@ -459,7 +512,7 @@ function renderPendingRequests(requests) {
 function openApproveModal(requestId) {
     console.log('Opening approve modal for request:', requestId);
     console.log('Available requests:', allPendingRequests);
-    const request = allPendingRequests.find(r => (r.id === requestId || r._id === requestId || r.requestId === requestId));
+    const request = allPendingRequests.find(r => (String(r.id) === String(requestId) || String(r._id) === String(requestId) || String(r.requestId) === String(requestId)));
     if (!request) {
         console.error('Request not found:', requestId, 'in', allPendingRequests);
         alert('Error: Request not found. Please refresh the page and try again.');
@@ -480,7 +533,7 @@ function openApproveModal(requestId) {
 // Open deny modal
 function openDenyModal(requestId) {
     console.log('Opening deny modal for request:', requestId);
-    const request = allPendingRequests.find(r => (r.id === requestId || r._id === requestId || r.requestId === requestId));
+    const request = allPendingRequests.find(r => (String(r.id) === String(requestId) || String(r._id) === String(requestId) || String(r.requestId) === String(requestId)));
     if (!request) {
         console.error('Request not found:', requestId);
         alert('Error: Request not found. Please refresh the page and try again.');
@@ -723,6 +776,7 @@ function handleSearch(query) {
 function logout() {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
     window.location.href = 'login.html';
 }
 

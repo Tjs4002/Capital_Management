@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": 1,
+    "object_id": "OBJ-20260429-0001",
+    "ticket_id": "TKT-20260429-0001",
+    "user_id": 4,
+    "item_name": "motor",
+    "asset_name": "motor",
+    "quantity": 5,
+    "amount": 450000,
+    "asset_value": 450000,
+    "department": "Supply",
+    "capital_type": "Supply",
+    "remarks": "trial",
+    "asset_description": "trial",
+    "status": "approved_by_md",
+    "current_step": "Completed",
+    "requested_on": "2026-04-29T06:11:13.466Z",
+    "request_date": "2026-04-11",
+    "capital_master_remarks": "",
+    "capital_master_approved_by": 9,
+    "capital_master_approved_on": "2026-04-29T06:17:05.660Z",
+    "allocated_fund": 450000,
+    "finance_manager_remarks": "ehh ok",
+    "finance_manager_approved_by": 10,
+    "finance_manager_approved_on": "2026-04-29T06:20:40.286Z",
+    "cfo_remarks": "",
+    "cfo_approved_by": 11,
+    "cfo_approved_on": "2026-04-29T06:24:36.123Z",
+    "md_remarks": "",
+    "md_approved_by": 12,
+    "md_approved_on": "2026-04-29T06:25:20.907Z"
+  }
+]

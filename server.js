@@ -32,7 +32,10 @@ function initDataFiles() {
     fs.writeFileSync(USERS_FILE, JSON.stringify([
       { id: 1, email: 'admin@capital.com', password: adminPassword, name: 'Admin User', role: 'admin', department: 'Management', phone: '', status: 'active', isVerified: true },
       { id: 2, email: 'master@capital.com', password: masterPassword, name: 'Capital Master', role: 'capital_master', department: 'Finance', phone: '', status: 'active', isVerified: true },
-      { id: 3, email: 'requester@capital.com', password: requesterPassword, name: 'Asset Requester', role: 'requester', department: 'Operations', phone: '', status: 'active', isVerified: true }
+      { id: 3, email: 'requester@capital.com', password: requesterPassword, name: 'Asset Requester', role: 'requester', department: 'Operations', phone: '', status: 'active', isVerified: true },
+      { id: 4, email: 'finance@capital.com', password: adminPassword, name: 'Finance Head', role: 'finance_head', department: 'Finance', phone: '', status: 'active', isVerified: true },
+      { id: 5, email: 'cfo@capital.com', password: adminPassword, name: 'Chief Finance Officer', role: 'cfo', department: 'Finance', phone: '', status: 'active', isVerified: true },
+      { id: 6, email: 'md@capital.com', password: adminPassword, name: 'Managing Director', role: 'md', department: 'Management', phone: '', status: 'active', isVerified: true }
     ], null, 2));
   }
 
@@ -146,63 +149,280 @@ app.delete('/api/users/:id', authMiddleware, (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// Asset routes
+// Asset ticket workflow routes
+const workflowSteps = {
+  pending_capital_master: 'Capital Master',
+  approved_by_capital_master: 'Finance Head',
+  approved_by_finance_manager: 'CFO',
+  approved_by_cfo: 'MD',
+  approved_by_md: 'Completed',
+};
+
+const statusLabels = {
+  pending_capital_master: 'Pending Capital Master',
+  approved_by_capital_master: 'Awaiting Finance Head',
+  approved_by_finance_manager: 'Awaiting CFO',
+  approved_by_cfo: 'Awaiting MD',
+  approved_by_md: 'Approved',
+  denied_by_capital_master: 'Denied by Capital Master',
+  denied_by_finance_manager: 'Denied by Finance Head',
+  denied_by_cfo: 'Denied by CFO',
+  denied_by_md: 'Denied by MD',
+};
+
+function canAct(role, allowedRoles) {
+  return allowedRoles.includes(role) || role === 'admin';
+}
+
+function findAssetIndex(assets, id) {
+  return assets.findIndex(a => String(a.id) === String(id) || String(a.ticket_id) === String(id) || String(a.object_id) === String(id));
+}
+
+function normalizeAsset(asset) {
+  const users = readFile(USERS_FILE);
+  const requester = users.find(u => u.id == asset.user_id);
+  const amount = Number(asset.amount ?? asset.asset_value ?? asset.assetValue ?? 0);
+  const quantity = Number(asset.quantity ?? asset.qty ?? 1);
+
+  return {
+    ...asset,
+    id: asset.id,
+    objectId: asset.object_id,
+    object_id: asset.object_id,
+    ticketId: asset.ticket_id,
+    ticket_id: asset.ticket_id,
+    requestId: asset.ticket_id || asset.requestId || asset.id,
+    assetName: asset.asset_name || asset.item_name || asset.assetName,
+    itemName: asset.item_name || asset.asset_name || asset.assetName,
+    assetValue: amount,
+    amount,
+    quantity,
+    qty: quantity,
+    department: asset.department || asset.capital_type || '',
+    remarks: asset.remarks || asset.asset_description || '',
+    userName: requester ? requester.name : (asset.userName || 'User'),
+    requesterName: requester ? requester.name : (asset.requesterName || 'User'),
+    requesterEmail: requester ? requester.email : asset.requesterEmail,
+    requestedBy: requester ? requester.name : asset.requestedBy,
+    requestedOn: asset.requested_on,
+    requestDate: asset.request_date || (asset.requested_on ? asset.requested_on.slice(0, 10) : ''),
+    requestTo: workflowSteps[asset.status] || 'Closed',
+    allocatedFund: Number(asset.allocated_fund ?? asset.allocatedFund ?? amount),
+    capitalMasterRemarks: asset.capital_master_remarks || '',
+    financeManagerRemarks: asset.finance_manager_remarks || '',
+    cfoRemarks: asset.cfo_remarks || '',
+    mdRemarks: asset.md_remarks || '',
+    financeManagerDenialReason: asset.finance_manager_denial_reason || '',
+    cfoDenialReason: asset.cfo_denial_reason || '',
+    mdDenialReason: asset.md_denial_reason || '',
+    denialReason: asset.denial_reason || asset.finance_manager_denial_reason || asset.cfo_denial_reason || asset.md_denial_reason || '',
+    statusLabel: statusLabels[asset.status] || asset.status,
+  };
+}
+
+function getVisibleAssets(req) {
+  let assets = readFile(ASSETS_FILE);
+  if (req.user.role === 'requester') assets = assets.filter(a => a.user_id == req.user.id);
+  return assets.map(normalizeAsset);
+}
+
+function listAssetsByStatus(req, res, statuses) {
+  try {
+    const assets = getVisibleAssets(req).filter(a => statuses.includes(a.status));
+    res.json({ success: true, assets, total: assets.length });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+}
+
+function updateTicket(req, res, options) {
+  try {
+    if (!canAct(req.user.role, options.roles)) return res.status(403).json({ error: 'Unauthorized' });
+
+    let assets = readFile(ASSETS_FILE);
+    const assetIndex = findAssetIndex(assets, req.params.id);
+    if (assetIndex === -1) return res.status(404).json({ error: 'Ticket not found' });
+
+    const asset = assets[assetIndex];
+    if (options.from && asset.status !== options.from) {
+      return res.status(409).json({ error: `Ticket is currently ${statusLabels[asset.status] || asset.status}` });
+    }
+
+    if (options.isDenial) {
+      const reason = (req.body.reason || req.body.financeManagerDenialReason || req.body.cfoDenialReason || req.body.mdDenialReason || '').trim();
+      if (!reason) return res.status(400).json({ error: 'Decline reason is required' });
+      asset[options.reasonField] = reason;
+      asset.denial_reason = reason;
+      asset.denied_on = new Date().toISOString();
+    } else {
+      const remarks = (req.body.remarks || '').trim();
+      if (options.remarksField) asset[options.remarksField] = remarks;
+      if (options.roleField) asset[options.roleField] = req.user.id;
+      if (options.dateField) asset[options.dateField] = new Date().toISOString();
+      if (options.allocation) asset.allocated_fund = Number(req.body.allocatedFund || req.body.allocated_fund || asset.amount || asset.asset_value || 0);
+    }
+
+    asset.status = options.to;
+    asset.current_step = workflowSteps[options.to] || 'Closed';
+    assets[assetIndex] = asset;
+    writeFile(ASSETS_FILE, assets);
+    res.json({ success: true, message: options.message, asset: normalizeAsset(asset) });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+}
+
 app.get('/api/assets', authMiddleware, (req, res) => {
   try {
-    let assets = readFile(ASSETS_FILE);
-    if (req.user.role === 'requester') assets = assets.filter(a => a.user_id == req.user.id);
+    const assets = getVisibleAssets(req).sort((a, b) => b.id - a.id);
     res.json({ success: true, assets, total: assets.length });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/assets/pending-capital-master', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['pending_capital_master', 'pending']));
+app.get('/api/assets/pending-finance-manager', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['approved_by_capital_master']));
+app.get('/api/assets/pending-cfo', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['approved_by_finance_manager']));
+app.get('/api/assets/pending-md', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['approved_by_cfo']));
+app.get('/api/assets/approved-by-finance', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['approved_by_finance_manager', 'approved_by_cfo', 'approved_by_md']));
+app.get('/api/assets/approved-by-cfo', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['approved_by_cfo', 'approved_by_md']));
+app.get('/api/assets/approved-by-md', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['approved_by_md']));
+app.get('/api/assets/denied-by-finance', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['denied_by_finance_manager']));
+app.get('/api/assets/denied-by-cfo', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['denied_by_cfo']));
+app.get('/api/assets/denied-by-md', authMiddleware, (req, res) => listAssetsByStatus(req, res, ['denied_by_md']));
+
+app.get('/api/assets/status-counts', authMiddleware, (req, res) => {
+  try {
+    const assets = getVisibleAssets(req);
+    res.json({
+      success: true,
+      pendingReview: assets.filter(a => ['pending_capital_master', 'approved_by_capital_master', 'approved_by_finance_manager', 'approved_by_cfo'].includes(a.status)).length,
+      finallyApproved: assets.filter(a => a.status === 'approved_by_md').length,
+      finallyDenied: assets.filter(a => String(a.status).startsWith('denied_by_')).length,
+    });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 app.get('/api/assets/:id', authMiddleware, (req, res) => {
   try {
-    const asset = readFile(ASSETS_FILE).find(a => a.id == req.params.id);
-    if (!asset) return res.status(404).json({ error: 'Asset not found' });
+    const asset = readFile(ASSETS_FILE).find(a => findAssetIndex([a], req.params.id) !== -1);
+    if (!asset) return res.status(404).json({ error: 'Ticket not found' });
     if (req.user.role === 'requester' && asset.user_id !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
-    res.json({ success: true, asset });
+    res.json({ success: true, asset: normalizeAsset(asset) });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 app.post('/api/assets', authMiddleware, (req, res) => {
   try {
-    const { assetName, assetDescription, capitalType, assetValue } = req.body;
-    if (!assetName || !capitalType || !assetValue) return res.status(400).json({ error: 'Missing fields' });
+    const itemName = (req.body.itemName || req.body.assetName || '').trim();
+    const quantity = Number(req.body.quantity || req.body.qty || 0);
+    const amount = Number(req.body.amount || req.body.assetValue || 0);
+    const department = (req.body.department || req.body.capitalType || '').trim();
+    const remarks = (req.body.remarks || req.body.assetDescription || '').trim();
+
+    if (!itemName || quantity <= 0 || amount <= 0) {
+      return res.status(400).json({ error: 'Item name, quantity, and amount are required' });
+    }
+
     let assets = readFile(ASSETS_FILE);
-    const asset = { id: getNextId(assets), user_id: req.user.id, asset_name: assetName, asset_description: assetDescription, capital_type: capitalType, asset_value: assetValue, status: 'pending', requested_on: new Date().toISOString() };
+    const id = getNextId(assets);
+    const todayKey = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const asset = {
+      id,
+      object_id: `OBJ-${todayKey}-${String(id).padStart(4, '0')}`,
+      ticket_id: `TKT-${todayKey}-${String(id).padStart(4, '0')}`,
+      user_id: req.user.id,
+      item_name: itemName,
+      asset_name: itemName,
+      quantity,
+      amount,
+      asset_value: amount,
+      department,
+      capital_type: department || 'General',
+      remarks,
+      asset_description: remarks,
+      status: 'pending_capital_master',
+      current_step: 'Capital Master',
+      requested_on: new Date().toISOString(),
+      request_date: req.body.requestDate || new Date().toISOString().slice(0, 10),
+    };
     assets.push(asset);
     writeFile(ASSETS_FILE, assets);
-    res.json({ success: true, message: 'Asset request created', assetId: asset.id });
+    res.json({ success: true, message: 'Ticket created and sent to Capital Master', assetId: asset.id, ticketId: asset.ticket_id, objectId: asset.object_id, asset: normalizeAsset(asset) });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.post('/api/assets/:id/approve', authMiddleware, (req, res) => {
-  try {
-    if (req.user.role !== 'capital_master') return res.status(403).json({ error: 'Unauthorized' });
-    let assets = readFile(ASSETS_FILE);
-    const assetIndex = assets.findIndex(a => a.id == req.params.id);
-    if (assetIndex === -1) return res.status(404).json({ error: 'Asset not found' });
-    assets[assetIndex].status = 'approved';
-    assets[assetIndex].approved_on = new Date().toISOString();
-    assets[assetIndex].approved_by = req.user.id;
-    assets[assetIndex].allocated_fund = req.body.allocatedFund || assets[assetIndex].asset_value;
-    writeFile(ASSETS_FILE, assets);
-    res.json({ success: true, message: 'Asset approved' });
-  } catch (error) { res.status(500).json({ error: error.message }); }
-});
+app.post('/api/assets/:id/approve', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['capital_master'],
+  from: 'pending_capital_master',
+  to: 'approved_by_capital_master',
+  allocation: true,
+  remarksField: 'capital_master_remarks',
+  roleField: 'capital_master_approved_by',
+  dateField: 'capital_master_approved_on',
+  message: 'Ticket approved by Capital Master and sent to Finance Head',
+}));
 
-app.post('/api/assets/:id/deny', authMiddleware, (req, res) => {
-  try {
-    if (req.user.role !== 'capital_master') return res.status(403).json({ error: 'Unauthorized' });
-    let assets = readFile(ASSETS_FILE);
-    const assetIndex = assets.findIndex(a => a.id == req.params.id);
-    if (assetIndex === -1) return res.status(404).json({ error: 'Asset not found' });
-    assets[assetIndex].status = 'denied';
-    assets[assetIndex].denial_reason = req.body.reason || '';
-    writeFile(ASSETS_FILE, assets);
-    res.json({ success: true, message: 'Asset denied' });
-  } catch (error) { res.status(500).json({ error: error.message }); }
-});
+app.post('/api/assets/:id/deny', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['capital_master'],
+  from: 'pending_capital_master',
+  to: 'denied_by_capital_master',
+  isDenial: true,
+  reasonField: 'denial_reason',
+  message: 'Ticket declined by Capital Master',
+}));
+
+app.post('/api/assets/:id/approve-finance-manager', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['finance_manager', 'finance_head'],
+  from: 'approved_by_capital_master',
+  to: 'approved_by_finance_manager',
+  remarksField: 'finance_manager_remarks',
+  roleField: 'finance_manager_approved_by',
+  dateField: 'finance_manager_approved_on',
+  message: 'Ticket approved by Finance Head and sent to CFO',
+}));
+
+app.post('/api/assets/:id/deny-finance-manager', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['finance_manager', 'finance_head'],
+  from: 'approved_by_capital_master',
+  to: 'denied_by_finance_manager',
+  isDenial: true,
+  reasonField: 'finance_manager_denial_reason',
+  message: 'Ticket declined by Finance Head',
+}));
+
+app.post('/api/assets/:id/approve-cfo', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['cfo'],
+  from: 'approved_by_finance_manager',
+  to: 'approved_by_cfo',
+  remarksField: 'cfo_remarks',
+  roleField: 'cfo_approved_by',
+  dateField: 'cfo_approved_on',
+  message: 'Ticket approved by CFO and sent to MD',
+}));
+
+app.post('/api/assets/:id/deny-cfo', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['cfo'],
+  from: 'approved_by_finance_manager',
+  to: 'denied_by_cfo',
+  isDenial: true,
+  reasonField: 'cfo_denial_reason',
+  message: 'Ticket declined by CFO',
+}));
+
+app.post('/api/assets/:id/approve-md', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['md'],
+  from: 'approved_by_cfo',
+  to: 'approved_by_md',
+  remarksField: 'md_remarks',
+  roleField: 'md_approved_by',
+  dateField: 'md_approved_on',
+  message: 'Ticket approved by MD',
+}));
+
+app.post('/api/assets/:id/deny-md', authMiddleware, (req, res) => updateTicket(req, res, {
+  roles: ['md'],
+  from: 'approved_by_cfo',
+  to: 'denied_by_md',
+  isDenial: true,
+  reasonField: 'md_denial_reason',
+  message: 'Ticket declined by MD',
+}));
 
 // Allocations routes
 app.get('/api/allocations', authMiddleware, (req, res) => {
@@ -324,6 +544,9 @@ async function startServer() {
       console.log(`  Admin: admin@capital.com / admin123`);
       console.log(`  Capital Master: master@capital.com / master123`);
       console.log(`  Requester: requester@capital.com / requester123`);
+      console.log(`  Finance Head: finance@capital.com / admin123`);
+      console.log(`  CFO: cfo@capital.com / admin123`);
+      console.log(`  MD: md@capital.com / admin123`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

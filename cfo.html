@@ -386,7 +386,7 @@ function initializePage() {
 
 // Load pending requests from backend
 function loadPendingRequests() {
-    fetch('/api/assets/pending-finance-manager', {
+    fetch('/api/assets/pending-cfo', {
         headers: {
             'Authorization': 'Bearer ' + localStorage.getItem('authToken')
         }
@@ -447,7 +447,7 @@ function renderPendingRequests(requests) {
 function openApproveModal(requestId) {
     console.log('Opening approve modal for request:', requestId);
     console.log('Available requests:', allPendingRequests);
-    const request = allPendingRequests.find(r => (r.id === requestId || r._id === requestId || r.requestId === requestId));
+    const request = allPendingRequests.find(r => (String(r.id) === String(requestId) || String(r._id) === String(requestId) || String(r.requestId) === String(requestId)));
     if (!request) {
         console.error('Request not found:', requestId, 'in', allPendingRequests);
         alert('Error: Request not found. Please refresh the page and try again.');
@@ -468,7 +468,7 @@ function openApproveModal(requestId) {
 // Open reject modal
 function openRejectModal(requestId) {
     console.log('Opening reject modal for request:', requestId);
-    const request = allPendingRequests.find(r => (r.id === requestId || r._id === requestId || r.requestId === requestId));
+    const request = allPendingRequests.find(r => (String(r.id) === String(requestId) || String(r._id) === String(requestId) || String(r.requestId) === String(requestId)));
     if (!request) {
         console.error('Request not found:', requestId);
         alert('Error: Request not found. Please refresh the page and try again.');

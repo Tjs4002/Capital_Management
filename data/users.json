@@ -94,7 +94,40 @@
     "name": "TITAN",
     "department": "Human Resources",
     "phone": "9096851337",
-    "role": "requester",
+    "role": "capital_master",
+    "status": "active",
+    "isVerified": true
+  },
+  {
+    "id": 10,
+    "email": "finance@capital.com",
+    "password": "$2a$10$JL2fZiRtee/GzRH2IZNqTO00QKB2jn0i3cEP6pIO3eKvBH0PRw4Ly",
+    "name": "Finance Head",
+    "department": "Finance",
+    "phone": "",
+    "role": "finance_head",
+    "status": "active",
+    "isVerified": true
+  },
+  {
+    "id": 11,
+    "email": "cfo@capital.com",
+    "password": "$2a$10$JL2fZiRtee/GzRH2IZNqTO00QKB2jn0i3cEP6pIO3eKvBH0PRw4Ly",
+    "name": "Chief Finance Officer",
+    "department": "Finance",
+    "phone": "",
+    "role": "cfo",
+    "status": "active",
+    "isVerified": true
+  },
+  {
+    "id": 12,
+    "email": "md@capital.com",
+    "password": "$2a$10$JL2fZiRtee/GzRH2IZNqTO00QKB2jn0i3cEP6pIO3eKvBH0PRw4Ly",
+    "name": "Managing Director",
+    "department": "Management",
+    "phone": "",
+    "role": "md",
     "status": "active",
     "isVerified": true
   }

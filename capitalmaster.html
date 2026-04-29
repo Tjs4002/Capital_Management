@@ -1237,6 +1237,135 @@ function handleSearch(value) {
     }
 }
 
+// Backend ticket workflow for Capital Master review.
+async function renderPendingAssetRequests() {
+    const tbody = document.getElementById('pendingAssetTableBody');
+    const pendingCount = document.getElementById('pendingCount');
+    let records = [];
+    const authToken = localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+
+    try {
+        const response = await fetch('/api/assets/pending-capital-master', {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        const data = await response.json();
+        if (data.success) records = data.assets || [];
+    } catch (error) {
+        records = JSON.parse(localStorage.getItem('assetRecords') || '[]').filter(r => r.status === 'Pending');
+    }
+
+    if (pendingCount) pendingCount.textContent = records.length ? records.length + ' Remaining' : 'All Processed';
+    if (!records.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No tickets waiting for Capital Master.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = records.map((r, i) => {
+        const amount = Number(r.amount || r.assetValue || 0);
+        return '<tr>' +
+            '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
+            '<td><strong style="color:var(--navy);">' + (r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + (r.objectId || '-') + '</span></td>' +
+            '<td>' + (r.requestedBy || r.requesterName || '-') + '</td>' +
+            '<td style="color:var(--muted);font-size:12px;">' + (r.requesterEmail || '-') + '</td>' +
+            '<td><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + (r.department || '-') + '</span></td>' +
+            '<td style="text-align:center;font-weight:600;color:var(--accent);">' + (r.qty || r.quantity || '-') + '</td>' +
+            '<td style="color:var(--muted);font-size:12px;">' + (r.requestDate || '-') + '</td>' +
+            '<td style="font-weight:600;color:#059669;">₹' + amount.toLocaleString() + '</td>' +
+            '<td style="text-align:center;"><button onclick="approveAssetRequest(\'' + r.id + '\')" style="padding:6px 10px;background:#10b981;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;">Approve</button><button onclick="denyAssetRequest(\'' + r.id + '\')" style="padding:6px 10px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Decline</button></td>' +
+        '</tr>';
+    }).join('');
+}
+
+async function approveAssetRequest(requestId) {
+    try {
+        const requestPanel = document.getElementById('requestDeterminationPanel');
+        if (requestPanel) requestPanel.style.display = 'block';
+        const authToken = localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+
+        const response = await fetch('/api/assets/' + requestId, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Ticket not found');
+        currentApprovalRequest = data.asset;
+
+        document.getElementById('inlineApprovalRequestId').textContent = data.asset.ticketId || data.asset.requestId || '-';
+        document.getElementById('inlineApprovalType').textContent = data.asset.itemName || data.asset.assetName || '-';
+        document.getElementById('inlineApprovalRequester').textContent = data.asset.requestedBy || data.asset.requesterName || '-';
+        document.getElementById('inlineApprovalQty').textContent = Number(data.asset.amount || data.asset.assetValue || 0).toLocaleString();
+        document.getElementById('inlineApprovalAssetRemarks').textContent = data.asset.remarks || '-';
+        document.getElementById('inlineApprovalAllocated').value = data.asset.amount || data.asset.assetValue || '';
+        document.getElementById('inlineApprovalRemarks').value = '';
+        document.getElementById('inlineApprovalPanel').style.display = 'block';
+        document.getElementById('inlineApprovalPanel').scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+async function submitInlineApproval() {
+    if (!currentApprovalRequest) return;
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.role && currentUser.role !== 'capital_master' && currentUser.role !== 'admin') {
+        alert('Please sign in as Capital Master to approve this ticket.');
+        return;
+    }
+
+    const allocated = Number(String(document.getElementById('inlineApprovalAllocated').value).replace(/,/g, ''));
+    const remarks = document.getElementById('inlineApprovalRemarks').value.trim();
+    if (!allocated) {
+        alert('Please enter Allocated Amount');
+        return;
+    }
+
+    try {
+        const authToken = localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+        const response = await fetch('/api/assets/' + currentApprovalRequest.id + '/approve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + authToken
+            },
+            body: JSON.stringify({ allocatedFund: allocated, remarks })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to approve ticket');
+        cancelInlineApproval();
+        renderPendingAssetRequests();
+        alert('Ticket approved and sent to Finance Head.');
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+async function denyAssetRequest(requestId) {
+    const reason = prompt('Enter reason for decline:');
+    if (reason === null) return;
+    if (!reason.trim()) {
+        alert('Decline reason is required.');
+        return;
+    }
+
+    try {
+        const authToken = localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+        const response = await fetch('/api/assets/' + requestId + '/deny', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + authToken
+            },
+            body: JSON.stringify({ reason })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to decline ticket');
+        cancelInlineApproval();
+        renderPendingAssetRequests();
+        alert('Ticket declined with reason.');
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
 // Initialize page
 renderPendingAssetRequests();
 
