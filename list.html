@@ -71,10 +71,6 @@
 <header class="topbar">
     <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')"><i class="fa-solid fa-bars"></i></button>
     <div class="topbar-title"><i class="fa-solid fa-list" style="color:var(--navy);margin-right:6px;"></i>Records List</div>
-    <div class="search-wrap">
-        <i class="fa-solid fa-magnifying-glass search-icon"></i>
-        <input type="text" placeholder="Search records…" id="globalSearch" oninput="handleSearch(this.value)">
-    </div>
     <div class="topbar-actions">
         <div class="profile-btn" onclick="toggleProfileMenu()" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(59,130,246,.1); border-radius: 10px;">
             <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #052377, #3b82f6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px;" id="userAvatarDash">A</div>
@@ -179,7 +175,6 @@
             </button>
         </div>
         <div id="filterControls" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-            <input type="text" id="searchFilter" placeholder="&#128269; Search records..." oninput="renderRecordsTable()" style="flex:1;min-width:200px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;transition:.2s;background:var(--card);color:var(--text);" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';">
             <select id="typeFilter" onchange="renderRecordsTable()" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;cursor:pointer;transition:.2s;background:var(--card);color:var(--text);" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';">
                 <option value="">All Types</option>
                 <option>Asset</option>
@@ -364,14 +359,6 @@ function renderRecordsTable() {
         records = records.filter(r => r.source === currentFilter);
     }
     
-    // Filter by search
-    const search = document.getElementById('searchFilter').value.toLowerCase();
-    if (search) {
-        records = records.filter(r => 
-            JSON.stringify(r).toLowerCase().includes(search)
-        );
-    }
-    
     // Filter by department
     const typeF = document.getElementById('typeFilter').value;
     if (typeF) {
@@ -544,7 +531,6 @@ function exportTableToCSV() {
 
 // Search functionality
 function handleSearch(value) {
-    document.getElementById('searchFilter').value = value;
     renderRecordsTable();
 }
 

@@ -141,7 +141,8 @@
     <div class="topbar-title"><i class="fa-solid fa-house" style="color:var(--navy);margin-right:6px;"></i>Dashboard</div>
     <div class="search-wrap">
         <i class="fa-solid fa-magnifying-glass search-icon"></i>
-        <input type="text" placeholder="Search records, assets…" id="globalSearch" oninput="handleSearch(this.value)">
+        <input type="text" placeholder="Search tickets…" id="globalSearch" oninput="handleSearch(this.value)" onfocus="handleSearch(this.value)">
+        <div id="searchDropdown" style="display:none;position:absolute;top:44px;left:0;width:420px;max-width:calc(100vw - 32px);background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 40px rgba(15,23,42,.18);z-index:300;overflow:hidden;"></div>
     </div>
     <div class="topbar-actions">
         <div class="profile-btn" onclick="toggleProfileMenu()" style="cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(59,130,246,.1); border-radius: 10px;">
@@ -1604,6 +1605,86 @@ function dashboardInfo(index) {
     openRequestDetailsModal(key);
 }
 
+function openDashboardSearchResult(index) {
+    const r = dashboardAssetRecords[index];
+    if (!r) return;
+    closeSearchDropdown();
+    const input = document.getElementById('globalSearch');
+    if (input) input.value = '';
+    const key = 'dashboard_req_' + (r.id || r.requestId || index);
+    window.requestDetailsMap = window.requestDetailsMap || {};
+    window.requestDetailsMap[key] = r;
+    openRequestDetailsModal(key);
+}
+
+function closeSearchDropdown() {
+    const dropdown = document.getElementById('searchDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+}
+
+function ticketSearchText(record) {
+    return [
+        record.ticketId,
+        record.ticket_id,
+        record.requestId,
+        record.objectId,
+        record.object_id,
+        record.itemName,
+        record.item_name,
+        record.assetName,
+        record.asset_name,
+        record.department,
+        record.capital_type,
+        record.remarks,
+        record.asset_description,
+        record.status,
+        record.statusLabel,
+        record.requestDate,
+        record.request_date,
+        record.requestedOn,
+        record.requested_on,
+        record.requesterName,
+        record.userName,
+        record.requestedBy,
+        record.requesterEmail,
+        record.requestTo,
+        record.current_step,
+        record.qty,
+        record.quantity,
+        record.amount,
+        record.allocatedFund,
+        record.capitalMasterRemarks,
+        record.financeManagerRemarks,
+        record.cfoRemarks,
+        record.mdRemarks,
+        record.denialReason,
+        record.financeManagerDenialReason,
+        record.cfoDenialReason,
+        record.mdDenialReason
+    ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function renderDashboardAssetRows(records, emptyMessage) {
+    const tbody = document.getElementById('assetTableBody');
+    if (!records.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">' + escapeHtml(emptyMessage) + '</td></tr>';
+        return;
+    }
+    tbody.innerHTML = records.map(function(r, i) {
+        return '<tr>' +
+            '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
+            '<td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td>' +
+            '<td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td>' +
+            '<td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td>' +
+            '<td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td>' +
+            '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' +
+            '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td>' +
+            '<td>' + dashboardStatusBadge(r) + '</td>' +
+            '<td style="text-align:center;"><button onclick="dashboardInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></td>' +
+        '</tr>';
+    }).join('');
+}
+
 async function renderAssetTable() {
     const tbody = document.getElementById('assetTableBody');
     const table = tbody.closest('table');
@@ -1621,20 +1702,49 @@ async function renderAssetTable() {
         tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet. <a href="asset.html">Submit one</a></td></tr>';
         return;
     }
-    tbody.innerHTML = dashboardAssetRecords.map(function(r, i) {
-        return '<tr>' +
-            '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
-            '<td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td>' +
-            '<td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td>' +
-            '<td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td>' +
-            '<td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td>' +
-            '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' +
-            '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td>' +
-            '<td>' + dashboardStatusBadge(r) + '</td>' +
-            '<td style="text-align:center;"><button onclick="dashboardInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></td>' +
-        '</tr>';
+    renderDashboardAssetRows(dashboardAssetRecords, 'No capital requests yet.');
+}
+
+async function handleSearch(q) {
+    const query = q.trim().toLowerCase();
+    if (!dashboardAssetRecords.length) await renderAssetTable();
+
+    if (!query) {
+        closeSearchDropdown();
+        return;
+    }
+
+    const dropdown = document.getElementById('searchDropdown');
+    if (!dropdown) return;
+
+    const results = dashboardAssetRecords
+        .map(function(record, index) { return { record, index }; })
+        .filter(function(item) { return ticketSearchText(item.record).includes(query); })
+        .slice(0, 8);
+
+    dropdown.style.display = 'block';
+    if (!results.length) {
+        dropdown.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px;text-align:center;">No ticket found for "' + escapeHtml(q) + '".</div>';
+        return;
+    }
+
+    dropdown.innerHTML = results.map(function(item) {
+        const r = item.record;
+        return '<button type="button" onclick="openDashboardSearchResult(' + item.index + ')" style="width:100%;border:none;background:white;text-align:left;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:12px;align-items:flex-start;" onmouseover="this.style.background=\'#f8fafc\';" onmouseout="this.style.background=\'white\';">' +
+            '<span style="width:34px;height:34px;border-radius:8px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-ticket"></i></span>' +
+            '<span style="min-width:0;display:block;">' +
+                '<span style="display:block;font-weight:800;color:var(--navy);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(r.ticketId || r.requestId || '-') + ' · ' + escapeHtml(r.itemName || r.assetName || '-') + '</span>' +
+                '<span style="display:block;color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(r.department || '-') + ' · ' + escapeHtml(r.statusLabel || r.status || 'Pending') + '</span>' +
+                '<span style="display:block;color:var(--muted);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(r.remarks || r.requesterName || r.userName || '') + '</span>' +
+            '</span>' +
+        '</button>';
     }).join('');
 }
+
+document.addEventListener('click', function(event) {
+    const searchWrap = document.querySelector('.search-wrap');
+    if (searchWrap && !searchWrap.contains(event.target)) closeSearchDropdown();
+});
 
 renderStats();
 renderNotifications();
