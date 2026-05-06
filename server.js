@@ -30,8 +30,8 @@ const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 function initDataFiles() {
   if (!fs.existsSync(USERS_FILE)) {
     const adminPassword = bcryptjs.hashSync('admin123', 10);
-    const masterPassword = bcryptjs.hashSync('master123', 10);
-    const requesterPassword = bcryptjs.hashSync('requester123', 10);
+    const masterPassword = bcryptjs.hashSync('admin123', 10);
+    const requesterPassword = bcryptjs.hashSync('admin123', 10);
 
     fs.writeFileSync(USERS_FILE, JSON.stringify([
       { id: 1, email: 'admin@capital.com', username: 'admin', password: adminPassword, name: 'Admin User', role: 'admin', department: 'Management', phone: '', status: 'active', isVerified: true },
@@ -906,8 +906,8 @@ async function startServer() {
       console.log(`📁 Data stored at: ${DATA_DIR}`);
       console.log(`\n📊 Sample Credentials:`);
       console.log(`  Admin: admin@capital.com / admin123`);
-      console.log(`  Capital Master: master@capital.com / master123`);
-      console.log(`  Requester: requester@capital.com / requester123`);
+      console.log(`  Capital Master: master@capital.com / admin123`);
+      console.log(`  Requester: requester@capital.com / admin123`);
       console.log(`  Finance Head: finance@capital.com / admin123`);
       console.log(`  CFO: cfo@capital.com / admin123`);
       console.log(`  MD: md@capital.com / admin123`);
