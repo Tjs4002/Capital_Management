@@ -21,7 +21,10 @@
     "phone": "",
     "status": "active",
     "isVerified": true,
-    "username": "master"
+    "username": "master",
+    "last_login_at": "2026-05-06T09:38:27.116Z",
+    "last_seen_at": "2026-05-06T09:43:54.825Z",
+    "force_logout_after": null
   },
   {
     "id": 3,
@@ -45,7 +48,10 @@
     "role": "requester",
     "status": "active",
     "isVerified": true,
-    "username": "tjs4002"
+    "username": "tjs4002",
+    "last_login_at": "2026-05-06T09:35:06.170Z",
+    "last_seen_at": "2026-05-06T09:36:25.516Z",
+    "force_logout_after": null
   },
   {
     "id": 5,
@@ -69,7 +75,10 @@
     "role": "requester",
     "status": "active",
     "isVerified": true,
-    "username": "bhavika"
+    "username": "bhavika",
+    "last_login_at": "2026-05-06T09:29:00.913Z",
+    "last_seen_at": "2026-05-06T09:33:05.937Z",
+    "force_logout_after": null
   },
   {
     "id": 7,
@@ -142,5 +151,23 @@
     "status": "active",
     "isVerified": true,
     "username": "md"
+  },
+  {
+    "id": 13,
+    "email": "waghbhavika9@gmail.com",
+    "username": "waghbhavika",
+    "password": "$2a$10$GeqTjhXd8igsuaWt2AGI..riSQwHC94GyG/pNSJevI0j0VQvVv.pO",
+    "name": "Bhavika Wagh",
+    "department": "IT",
+    "phone": "9307479621",
+    "role": "requester",
+    "status": "active",
+    "isVerified": true,
+    "verification_email_sent_at": "2026-05-06T09:26:29.493Z",
+    "created_at": "2026-05-06T09:26:23.629Z",
+    "last_login_at": "2026-05-06T09:28:11.514Z",
+    "last_seen_at": "2026-05-06T09:28:11.514Z",
+    "force_logout_after": null,
+    "verified_at": "2026-05-06T09:27:04.846Z"
   }
 ]

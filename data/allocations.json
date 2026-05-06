@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "id": 1,
+    "capital_type": "Manufacturing",
+    "allocated_amount": 100000,
+    "used_amount": 0,
+    "available_amount": 100000,
+    "remarks": ""
+  },
+  {
+    "id": 2,
+    "capital_type": "Sales",
+    "allocated_amount": 200000,
+    "used_amount": 0,
+    "available_amount": 200000,
+    "remarks": ""
+  },
+  {
+    "id": 3,
+    "capital_type": "Supply",
+    "allocated_amount": 300000,
+    "used_amount": 450000,
+    "available_amount": -150000,
+    "remarks": ""
+  },
+  {
+    "id": 4,
+    "capital_type": "IT",
+    "allocated_amount": 400000,
+    "used_amount": 0,
+    "available_amount": 400000,
+    "remarks": ""
+  },
+  {
+    "id": 5,
+    "capital_type": "HR",
+    "allocated_amount": 500000,
+    "used_amount": 0,
+    "available_amount": 500000,
+    "remarks": ""
+  },
+  {
+    "id": 6,
+    "capital_type": "Finance",
+    "allocated_amount": 600000,
+    "used_amount": 0,
+    "available_amount": 600000,
+    "remarks": ""
+  }
+]

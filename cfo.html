@@ -717,9 +717,9 @@ function showRequestInfoFromList(listName, index) {
         detailRow('Requester', r.requesterName || r.userName || r.requestedBy) +
         detailRow('Email', r.requesterEmail) +
         detailRow('Next Step', r.requestTo) +
-        detailRow('Allowed Amount', Number(r.allowedAmount || r.departmentAllocatedFund || 0) ? moneyValue(r.allowedAmount || r.departmentAllocatedFund) : 'Funds not allocated') +
-        detailRow('Allocated Amount', moneyValue(r.requiredFund || r.allocatedFund || r.amount || r.assetValue)) +
-        detailRow('Remaining Fund', moneyValue(r.remainingFund)) +
+        detailRow('Allocated Amount', Number(r.allowedAmount || r.departmentAllocatedFund || 0) ? moneyValue(r.allowedAmount || r.departmentAllocatedFund) : 'Funds not allocated') +
+        detailRow('Required Amount', moneyValue(r.requiredFund || r.allocatedFund || r.amount || r.assetValue)) +
+        detailRow('Remaining Amount', moneyValue(r.remainingFund)) +
         detailRow('Status', r.statusLabel || r.status) +
         '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
         remarkBlock('Requester', r.remarks) +

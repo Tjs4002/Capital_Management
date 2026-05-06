@@ -110,37 +110,6 @@
             color: #999;
         }
 
-        .demo-users {
-            background: #f0f4ff;
-            border-left: 4px solid #3b82f6;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .demo-users p {
-            margin: 0;
-            margin-bottom: 6px;
-        }
-
-        .demo-users code {
-            background: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            color: #052377;
-            font-weight: 600;
-        }
-
-        .demo-users small {
-            display: block;
-            margin-top: 8px;
-            font-size: 11px;
-            color: #999;
-        }
-
         .remember-forgot {
             display: flex;
             justify-content: space-between;
@@ -349,14 +318,6 @@
             </div>
         </div>
 
-        <!-- DEMO USERS -->
-        <div class="demo-users">
-            <p><strong>Demo Accounts:</strong></p>
-            <p>Admin: <code>admin@capital.com</code> / <code>admin123</code></p>
-            <p>User: <code>john@capital.com</code> / <code>user123</code></p>
-            <small>Or register a new account to create your own login credentials</small>
-        </div>
-
         <!-- LOGIN BUTTON -->
         <button type="submit" class="login-btn" id="loginBtn">
             <i class="fa-solid fa-arrow-right-to-bracket"></i>
@@ -376,30 +337,6 @@
 </div>
 
 <script>
-    // Demo users database (for testing)
-    const demoUsers = [
-        {
-            id: 1,
-            name: 'Administrator',
-            email: 'admin@capital.com',
-            password: 'admin123',
-            role: 'Admin'
-        },
-        {
-            id: 2,
-            name: 'John Doe',
-            email: 'john@capital.com',
-            password: 'user123',
-            role: 'User'
-        },
-        {
-            id: 3,
-            name: 'Sarah Smith',
-            email: 'sarah@capital.com',
-            password: 'user123',
-            role: 'Manager'
-        }
-    ];
 
     function handleLogin(event) {
         event.preventDefault();

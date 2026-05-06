@@ -181,5 +181,29 @@
     "capital_master_approved_by": 2,
     "capital_master_approved_on": "2026-05-06T08:48:08.931Z",
     "allocated_fund": 300000
+  },
+  {
+    "id": 12,
+    "object_id": "OBJ-20260506-U0004-0001",
+    "ticket_id": "TKT-20260506-U0004-0001",
+    "request_sequence": 1,
+    "user_id": 4,
+    "item_name": "Cup",
+    "asset_name": "Cup",
+    "quantity": 500,
+    "amount": 50000,
+    "asset_value": 50000,
+    "department": "Supply",
+    "capital_type": "Supply",
+    "remarks": "Black",
+    "asset_description": "Black",
+    "status": "approved_by_capital_master",
+    "current_step": "Finance Head",
+    "requested_on": "2026-05-06T09:36:25.518Z",
+    "request_date": "2026-05-06",
+    "capital_master_remarks": "approve by capital",
+    "capital_master_approved_by": 2,
+    "capital_master_approved_on": "2026-05-06T09:40:34.184Z",
+    "allocated_fund": 50000
   }
 ]

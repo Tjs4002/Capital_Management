@@ -582,7 +582,9 @@ function showRequestInfo(index) {
         detailRow('Requester', r.requesterName || r.requestedBy) +
         detailRow('Email', r.requesterEmail) +
         detailRow('Next Step', r.requestTo) +
-        detailRow('Required Fund', amount ? 'Rs. ' + amount.toLocaleString() : 'Not entered yet') +
+        detailRow('Allocated Amount', Number(r.allowedAmount || r.departmentAllocatedFund || 0) ? 'Rs. ' + Number(r.allowedAmount || r.departmentAllocatedFund).toLocaleString('en-IN') : 'Funds not allocated') +
+        detailRow('Required Amount', amount ? 'Rs. ' + amount.toLocaleString('en-IN') : 'Not entered yet') +
+        detailRow('Remaining Amount', Number.isFinite(Number(r.remainingFund)) ? 'Rs. ' + Number(r.remainingFund).toLocaleString('en-IN') : '-') +
         detailRow('Status', r.statusLabel || r.status) +
         '<div style="font-family:\'Syne\',sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
         remarkBlock('Requester', r.remarks) +
