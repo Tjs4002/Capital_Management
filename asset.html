@@ -588,7 +588,7 @@ function showRequestInfo(index) {
         detailRow('Requester', r.requesterName || r.requestedBy) +
         detailRow('Email', r.requesterEmail) +
         detailRow('Next Step', r.requestTo) +
-        detailRow('Allocated Amount', amount ? 'Rs. ' + amount.toLocaleString() : 'Not allocated yet') +
+        detailRow('Required Fund', amount ? 'Rs. ' + amount.toLocaleString() : 'Not entered yet') +
         detailRow('Status', r.statusLabel || r.status) +
         '<div style="font-family:\'Syne\',sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
         remarkBlock('Requester', r.remarks) +

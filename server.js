@@ -4,10 +4,13 @@ const jwt = require('jsonwebtoken');
 const bcryptjs = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 require('dotenv').config();
 
 const sequelize = require('./config/database');
 const User = require('./models/User');
+const { generateToken } = require('./utils/tokenStore');
+const { sendVerificationEmail } = require('./utils/mailer');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -30,12 +33,12 @@ function initDataFiles() {
     const requesterPassword = bcryptjs.hashSync('requester123', 10);
 
     fs.writeFileSync(USERS_FILE, JSON.stringify([
-      { id: 1, email: 'admin@capital.com', password: adminPassword, name: 'Admin User', role: 'admin', department: 'Management', phone: '', status: 'active', isVerified: true },
-      { id: 2, email: 'master@capital.com', password: masterPassword, name: 'Capital Master', role: 'capital_master', department: 'Finance', phone: '', status: 'active', isVerified: true },
-      { id: 3, email: 'requester@capital.com', password: requesterPassword, name: 'Asset Requester', role: 'requester', department: 'Operations', phone: '', status: 'active', isVerified: true },
-      { id: 4, email: 'finance@capital.com', password: adminPassword, name: 'Finance Head', role: 'finance_head', department: 'Finance', phone: '', status: 'active', isVerified: true },
-      { id: 5, email: 'cfo@capital.com', password: adminPassword, name: 'Chief Finance Officer', role: 'cfo', department: 'Finance', phone: '', status: 'active', isVerified: true },
-      { id: 6, email: 'md@capital.com', password: adminPassword, name: 'Managing Director', role: 'md', department: 'Management', phone: '', status: 'active', isVerified: true }
+      { id: 1, email: 'admin@capital.com', username: 'admin', password: adminPassword, name: 'Admin User', role: 'admin', department: 'Management', phone: '', status: 'active', isVerified: true },
+      { id: 2, email: 'master@capital.com', username: 'master', password: masterPassword, name: 'Capital Master', role: 'capital_master', department: 'Finance', phone: '', status: 'active', isVerified: true },
+      { id: 3, email: 'requester@capital.com', username: 'requester', password: requesterPassword, name: 'Asset Requester', role: 'requester', department: 'Operations', phone: '', status: 'active', isVerified: true },
+      { id: 4, email: 'finance@capital.com', username: 'finance', password: adminPassword, name: 'Finance Head', role: 'finance_head', department: 'Finance', phone: '', status: 'active', isVerified: true },
+      { id: 5, email: 'cfo@capital.com', username: 'cfo', password: adminPassword, name: 'Chief Finance Officer', role: 'cfo', department: 'Finance', phone: '', status: 'active', isVerified: true },
+      { id: 6, email: 'md@capital.com', username: 'md', password: adminPassword, name: 'Managing Director', role: 'md', department: 'Management', phone: '', status: 'active', isVerified: true }
     ], null, 2));
   }
 
@@ -56,6 +59,21 @@ function initDataFiles() {
 const readFile = (filePath) => { try { return JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return []; } };
 const writeFile = (filePath, data) => { fs.writeFileSync(filePath, JSON.stringify(data, null, 2)); };
 const getNextId = (data) => Math.max(0, ...data.map(d => d.id || 0)) + 1;
+const getUsernameFromEmail = (email) => String(email || 'user').split('@')[0];
+function getBaseUrl(req) {
+  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL.replace(/\/$/, '');
+  const host = req.get('host') || '';
+  const isLocalHost = /^localhost(?::\d+)?$/i.test(host) || /^127\.0\.0\.1(?::\d+)?$/i.test(host);
+  if (isLocalHost) {
+    const port = host.split(':')[1] || process.env.PORT || '5000';
+    const networks = os.networkInterfaces();
+    for (const addresses of Object.values(networks)) {
+      const address = (addresses || []).find(item => item.family === 'IPv4' && !item.internal);
+      if (address) return `${req.protocol}://${address.address}:${port}`;
+    }
+  }
+  return (host ? `${req.protocol}://${host}` : (process.env.BASE_URL || 'http://localhost:5000')).replace(/\/$/, '');
+}
 
 // Middleware
 app.use(express.json());
@@ -74,34 +92,56 @@ const authMiddleware = (req, res, next) => {
 };
 
 // Auth routes
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, name, department, phone, role } = req.body;
-    if (!email || !password || !name) return res.status(400).json({ error: 'Required fields missing' });
+    const { email, password, name, username, department, phone, role } = req.body;
+    const cleanUsername = (username || '').trim();
+    if (!email || !password || !name || !cleanUsername) return res.status(400).json({ error: 'Required fields missing' });
 
     const users = readFile(USERS_FILE);
     if (users.find(u => u.email === email)) return res.status(400).json({ error: 'Email already exists' });
+    if (users.find(u => String(u.username || '').toLowerCase() === cleanUsername.toLowerCase())) return res.status(400).json({ error: 'Username already exists' });
 
-    const user = { id: getNextId(users), email, password: bcryptjs.hashSync(password, 10), name, department: department || '', phone: phone || '', role: role || 'requester', status: 'active' };
+    const user = {
+      id: getNextId(users),
+      email,
+      username: cleanUsername,
+      password: bcryptjs.hashSync(password, 10),
+      name,
+      department: department || '',
+      phone: phone || '',
+      role: role || 'requester',
+      status: 'active',
+      isVerified: false,
+      verification_email_sent_at: null
+    };
+    const verifyToken = generateToken(email);
+    await sendVerificationEmail(email, verifyToken, getBaseUrl(req));
+
+    user.verification_email_sent_at = new Date().toISOString();
     users.push(user);
     writeFile(USERS_FILE, users);
 
-    const token = jwt.sign({ id: user.id, email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, message: 'User registered', token, user: { id: user.id, email, name, role: user.role } });
+    res.json({ success: true, message: 'Registration successful. Please verify your email.', email: user.email, user: { id: user.id, email, username: user.username, name, role: user.role } });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 app.post('/api/auth/login', (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (!email || !password) return res.status(400).json({ error: 'Email/username and password required' });
 
     const users = readFile(USERS_FILE);
-    const user = users.find(u => u.email === email);
+    const user = users.find(u => u.email === email || String(u.username || '').toLowerCase() === String(email).toLowerCase());
     if (!user || !bcryptjs.compareSync(password, user.password)) return res.status(401).json({ error: 'Invalid credentials' });
+    if (user.isVerified === false) return res.status(403).json({ error: 'Please verify your email before logging in.' });
+    if (!user.username) {
+      user.username = getUsernameFromEmail(user.email);
+      writeFile(USERS_FILE, users);
+    }
 
-    const token = jwt.sign({ id: user.id, email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, message: 'Login successful', token, user: { id: user.id, email, name: user.name, role: user.role } });
+    const token = jwt.sign({ id: user.id, email: user.email, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role } });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
@@ -113,7 +153,7 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/users', authMiddleware, (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Unauthorized' });
-    const users = readFile(USERS_FILE).map(u => ({ id: u.id, email: u.email, name: u.name, role: u.role, department: u.department, status: u.status }));
+    const users = readFile(USERS_FILE).map(u => ({ id: u.id, email: u.email, username: u.username || getUsernameFromEmail(u.email), name: u.name, role: u.role, department: u.department, status: u.status }));
     res.json({ success: true, users, total: users.length });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
@@ -233,6 +273,72 @@ function listAssetsByStatus(req, res, statuses) {
   } catch (error) { res.status(500).json({ error: error.message }); }
 }
 
+function createWorkflowNotification(asset, options) {
+  if (!asset || !asset.user_id) return;
+
+  const notifications = readFile(NOTIFICATIONS_FILE);
+  const ticketId = asset.ticket_id || asset.requestId || asset.id;
+  const reason = asset.denial_reason || asset.finance_manager_denial_reason || asset.cfo_denial_reason || asset.md_denial_reason || '';
+  const messages = {
+    approved_by_capital_master: {
+      type: 'pending-finance',
+      title: 'Request sent to Finance Head',
+      message: `Your request ${ticketId} was approved by Capital Master and moved to Finance Head.`
+    },
+    approved_by_finance_manager: {
+      type: 'pending-cfo',
+      title: 'Request sent to CFO',
+      message: `Your request ${ticketId} was approved by Finance Head and moved to CFO.`
+    },
+    approved_by_cfo: {
+      type: 'pending-md',
+      title: 'Request sent to MD',
+      message: `Your request ${ticketId} was approved by CFO and moved to MD.`
+    },
+    approved_by_md: {
+      type: 'md_final_approval',
+      title: 'Request fully approved',
+      message: `Your request ${ticketId} was approved by MD.`
+    },
+    denied_by_capital_master: {
+      type: 'denied',
+      title: 'Request declined by Capital Master',
+      message: `Your request ${ticketId} was declined by Capital Master.${reason ? ` Reason: ${reason}` : ''}`
+    },
+    denied_by_finance_manager: {
+      type: 'denied',
+      title: 'Request declined by Finance Head',
+      message: `Your request ${ticketId} was declined by Finance Head.${reason ? ` Reason: ${reason}` : ''}`
+    },
+    denied_by_cfo: {
+      type: 'cfo-denial',
+      title: 'Request declined by CFO',
+      message: `Your request ${ticketId} was declined by CFO.${reason ? ` Reason: ${reason}` : ''}`
+    },
+    denied_by_md: {
+      type: 'md-denial',
+      title: 'Request declined by MD',
+      message: `Your request ${ticketId} was declined by MD.${reason ? ` Reason: ${reason}` : ''}`
+    }
+  };
+
+  const details = messages[options.to];
+  if (!details) return;
+
+  notifications.push({
+    id: getNextId(notifications),
+    user_id: asset.user_id,
+    type: details.type,
+    title: details.title,
+    message: details.message,
+    related_id: asset.id,
+    related_ticket_id: ticketId,
+    is_read: false,
+    created_at: new Date().toISOString()
+  });
+  writeFile(NOTIFICATIONS_FILE, notifications);
+}
+
 function updateTicket(req, res, options) {
   try {
     if (!canAct(req.user.role, options.roles)) return res.status(403).json({ error: 'Unauthorized' });
@@ -259,7 +365,7 @@ function updateTicket(req, res, options) {
       if (options.dateField) asset[options.dateField] = new Date().toISOString();
       if (options.allocation) {
         const allocatedFund = Number(req.body.allocatedFund || req.body.allocated_fund || 0);
-        if (allocatedFund <= 0) return res.status(400).json({ error: 'Allocated amount is required' });
+        if (allocatedFund <= 0) return res.status(400).json({ error: 'Required fund is required' });
         asset.allocated_fund = allocatedFund;
         asset.amount = allocatedFund;
         asset.asset_value = allocatedFund;
@@ -270,6 +376,7 @@ function updateTicket(req, res, options) {
     asset.current_step = workflowSteps[options.to] || 'Closed';
     assets[assetIndex] = asset;
     writeFile(ASSETS_FILE, assets);
+    createWorkflowNotification(asset, options);
     res.json({ success: true, message: options.message, asset: normalizeAsset(asset) });
   } catch (error) { res.status(500).json({ error: error.message }); }
 }
@@ -550,6 +657,16 @@ app.put('/api/notifications/:id/read', authMiddleware, (req, res) => {
     notif.is_read = 1;
     writeFile(NOTIFICATIONS_FILE, notifications);
     res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/notifications/:id', authMiddleware, (req, res) => {
+  try {
+    let notifications = readFile(NOTIFICATIONS_FILE);
+    const beforeCount = notifications.length;
+    notifications = notifications.filter(n => !(n.id == req.params.id && n.user_id == req.user.id));
+    writeFile(NOTIFICATIONS_FILE, notifications);
+    res.json({ success: true, deleted: beforeCount - notifications.length });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 

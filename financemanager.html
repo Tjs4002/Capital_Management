@@ -182,7 +182,7 @@
                         <th>Asset Name</th>
                         <th>Requested By</th>
                         <th>Asset Value</th>
-                        <th>Allocated Fund</th>
+                        <th>Required Fund</th>
                         <th>Capital Master Remarks</th>
                         <th style="text-align:center;">Action</th>
                     </tr>
@@ -211,7 +211,7 @@
                         <th>Request ID</th>
                         <th>Asset Name</th>
                         <th>Requested By</th>
-                        <th>Allocated Fund</th>
+                        <th>Required Fund</th>
                         <th>Finance Manager Remarks</th>
                         <th>Approved On</th>
                     </tr>
@@ -279,7 +279,7 @@
                 <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Requested By:</strong><br><span id="approveRequesterName" style="color:var(--navy);font-weight:600;">-</span></div>
                 <div style="margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div><strong style="color:var(--muted);">Asset Value:</strong><br><span id="approveAssetValue" style="color:var(--navy);font-weight:600;">-</span></div>
-                    <div><strong style="color:var(--muted);">Allocated Fund:</strong><br><span id="approveAllocatedFund" style="color:#10b981;font-weight:600;">-</span></div>
+                    <div><strong style="color:var(--muted);">Required Fund:</strong><br><span id="approveAllocatedFund" style="color:#10b981;font-weight:600;">-</span></div>
                 </div>
             </div>
             <div style="margin-bottom:16px;">
@@ -758,7 +758,7 @@ function showRequestInfoFromList(listName, index) {
         detailRow('Requester', r.requesterName || r.userName || r.requestedBy) +
         detailRow('Email', r.requesterEmail) +
         detailRow('Next Step', r.requestTo) +
-        detailRow('Allocated Amount', amount ? 'Rs. ' + amount.toLocaleString() : 'Not allocated yet') +
+        detailRow('Required Fund', amount ? 'Rs. ' + amount.toLocaleString() : 'Not entered yet') +
         detailRow('Status', r.statusLabel || r.status) +
         '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
         remarkBlock('Requester', r.remarks) +
@@ -774,29 +774,31 @@ function closeInfoBubble() {
     if (bubble) bubble.style.display = 'none';
 }
 
-function setCompactHeaders(tbody) {
-    tbody.closest('table').querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+function setCompactHeaders(tbody, includeCapitalMasterRemarks) {
+    const capitalMasterColumn = includeCapitalMasterRemarks ? '<th>Capital Master Remarks</th>' : '';
+    tbody.closest('table').querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th>' + capitalMasterColumn + '<th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
 }
 
-function compactRow(r, i, listName, extraActions) {
+function compactRow(r, i, listName, extraActions, includeCapitalMasterRemarks) {
     const status = '<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + escapeHtml(r.statusLabel || r.status || 'Pending') + '</span>';
-    return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || r.id || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td><td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + status + '</td><td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;">' + (extraActions || '') + '<button onclick="showRequestInfoFromList(\'' + listName + '\',' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td></tr>';
+    const capitalMasterCell = includeCapitalMasterRemarks ? '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.capitalMasterRemarks || '-') + '</td>' : '';
+    return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || r.id || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' + capitalMasterCell + '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + status + '</td><td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;">' + (extraActions || '') + '<button onclick="showRequestInfoFromList(\'' + listName + '\',' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td></tr>';
 }
 
 function renderPendingRequests(requests) {
     allPendingRequests = (requests || []).map(normalizeRequest);
     window.financePendingRecords = allPendingRequests;
     const tbody = document.getElementById('pendingRequestsTableBody');
-    setCompactHeaders(tbody);
+    setCompactHeaders(tbody, true);
     document.getElementById('pendingCount').textContent = allPendingRequests.length;
     if (!allPendingRequests.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No requests pending review.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="10">No requests pending review.</td></tr>';
         return;
     }
     tbody.innerHTML = allPendingRequests.map((req, idx) => {
         const id = req.id || req._id || req.requestId;
         const actions = '<button onclick="openApproveModal(\'' + id + '\')" title="Approve" style="width:30px;height:30px;border:none;border-radius:7px;background:#dcfce7;color:#15803d;cursor:pointer;"><i class="fa-solid fa-check"></i></button><button onclick="openDenyModal(\'' + id + '\')" title="Deny" style="width:30px;height:30px;border:none;border-radius:7px;background:#fee2e2;color:#991b1b;cursor:pointer;"><i class="fa-solid fa-ban"></i></button>';
-        return compactRow(req, idx, 'financePendingRecords', actions);
+        return compactRow(req, idx, 'financePendingRecords', actions, true);
     }).join('');
 }
 

@@ -129,7 +129,7 @@
         </div>
         <div style="position:relative;">
             <div class="wb-tag" style="background:rgba(217,119,6,.2);border:1px solid rgba(217,119,6,.35);color:#b45309;">CAPITAL MASTER</div>
-            <h1 style="color:#78350f;margin-bottom:6px;">Approve Requests & Allocate Funds</h1>
+            <h1 style="color:#78350f;margin-bottom:6px;">Approve Requests & Required Fund</h1>
            <!-- <p style="color:rgba(120,53,15,.6);font-size:14px;">Review pending asset requests, approve them, and allocate funds directly in one workflow.</p>-->
         </div>
     </div>
@@ -232,7 +232,7 @@
                         <th>Department</th>
                         <th>Quantity</th>
                         <th>Date</th>
-                        <th>Amount Allocation</th>
+                        <th>Required Fund</th>
                         <th style="text-align:center;">Status</th>
                     </tr>
                 </thead>
@@ -277,7 +277,7 @@
     <div id="inlineApprovalPanel" style="display:none;margin-bottom:24px;">
         <div class="section-card">
             <div class="sc-header">
-                <div class="sc-title"><i class="fa-solid fa-circle-check" style="background:#10b981;color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;"></i>Approve Request & Allocate Funds</div>
+                <div class="sc-title"><i class="fa-solid fa-circle-check" style="background:#10b981;color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;"></i>Approve Request & Required Fund</div>
                 <button onclick="cancelInlineApproval()" style="padding:8px 14px;background:#ef4444;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#dc2626';" onmouseout="this.style.background='#ef4444';">Cancel</button>
             </div>
             <div style="padding:20px;">
@@ -294,8 +294,8 @@
                     </div>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Allocated Amount (₹) *</label>
-                    <input type="text" id="inlineApprovalAllocated" required placeholder="Enter amount to allocate" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';" oninput="formatCurrencyInput(this);checkFundAvailabilityRealTime();">
+                    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Required Fund (₹) *</label>
+                    <input type="text" id="inlineApprovalAllocated" required placeholder="Enter required fund" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';" oninput="formatCurrencyInput(this);checkFundAvailabilityRealTime();">
                     <div id="fundAvailabilityStatus" style="margin-top:10px;padding:10px;border-radius:6px;font-weight:600;font-size:12px;display:none;align-items:center;gap:8px;"></div>
                 </div>
                 <div style="margin-bottom:20px;">
@@ -304,7 +304,7 @@
                 </div>
                 <div style="display:flex;gap:12px;justify-content:flex-end;">
                     <button onclick="cancelInlineApproval()" style="padding:10px 24px;background:white;border:1.5px solid var(--border);color:var(--text);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#f8f9fa';" onmouseout="this.style.background='white';">Cancel</button>
-                    <button onclick="submitInlineApproval()" style="padding:10px 24px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#059669';" onmouseout="this.style.background='#10b981';"><i class="fa-solid fa-check"></i> Approve & Allocate</button>
+                    <button onclick="submitInlineApproval()" style="padding:10px 24px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#059669';" onmouseout="this.style.background='#10b981';"><i class="fa-solid fa-check"></i> Approve</button>
                 </div>
             </div>
         </div>
@@ -465,7 +465,7 @@
         <div id="inlineApprovalPanel" style="display:none;margin-bottom:24px;">
             <div class="section-card">
                 <div class="sc-header">
-                    <div class="sc-title"><i class="fa-solid fa-circle-check" style="background:#10b981;color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;"></i>Approve Request & Allocate Funds</div>
+                    <div class="sc-title"><i class="fa-solid fa-circle-check" style="background:#10b981;color:white;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px;"></i>Approve Request & Required Fund</div>
                     <button onclick="cancelInlineApproval()" style="padding:8px 14px;background:#ef4444;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#dc2626';" onmouseout="this.style.background='#ef4444';">✕ Cancel</button>
                 </div>
                 <div style="padding:20px;">
@@ -482,8 +482,8 @@
                         </div>
                     </div>
                     <div style="margin-bottom:16px;">
-                        <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Allocated Amount (₹) *</label>
-                        <input type="text" id="inlineApprovalAllocated" required placeholder="Enter amount to allocate" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';" oninput="formatCurrencyInput(this);checkFundAvailabilityRealTime();">
+                        <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Required Fund (₹) *</label>
+                        <input type="text" id="inlineApprovalAllocated" required placeholder="Enter required fund" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';" oninput="formatCurrencyInput(this);checkFundAvailabilityRealTime();">
                         <div id="fundAvailabilityStatus" style="margin-top:10px;padding:10px;border-radius:6px;font-weight:600;font-size:12px;display:none;align-items:center;gap:8px;"></div>
                     </div>
                     <div style="margin-bottom:20px;">
@@ -492,7 +492,7 @@
                     </div>
                     <div style="display:flex;gap:12px;justify-content:flex-end;">
                         <button onclick="cancelInlineApproval()" style="padding:10px 24px;background:white;border:1.5px solid var(--border);color:var(--text);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#f8f9fa';" onmouseout="this.style.background='white';">Cancel</button>
-                        <button onclick="submitInlineApproval()" style="padding:10px 24px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#059669';" onmouseout="this.style.background='#10b981';"><i class="fa-solid fa-check"></i> Approve & Allocate</button>
+                        <button onclick="submitInlineApproval()" style="padding:10px 24px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='#059669';" onmouseout="this.style.background='#10b981';"><i class="fa-solid fa-check"></i> Approve</button>
                     </div>
                 </div>
             </div>
@@ -641,7 +641,7 @@ function renderPendingAssetRequests() {
     }
     
     tbody.innerHTML = assetRecords.slice().reverse().map((r, i) => {
-        // Get allocated fund directly from asset record
+        // Get required fund directly from asset record
         const allocatedFund = r.allocatedFund ? '₹' + (r.allocatedFund || 0).toLocaleString() : '—';
         
         // Determine status badge color and style
@@ -737,7 +737,7 @@ function submitInlineApproval() {
     const capitalMasterRemarks = document.getElementById('inlineApprovalRemarks').value.trim();
     
     if (allocated === 0) {
-        alert('Please enter Allocated Amount');
+        alert('Please enter Required Fund');
         return;
     }
     
@@ -773,7 +773,7 @@ function submitInlineApproval() {
     }
     
     // Send notification to user
-    sendUserNotification(request, 'PendingFinance', 'Your asset request has been approved by Capital Master with allocated fund ₹' + allocated.toLocaleString() + '. It is now awaiting final approval from Finance Manager.');
+    sendUserNotification(request, 'PendingFinance', 'Your asset request has been approved by Capital Master with required fund ₹' + allocated.toLocaleString() + '. It is now awaiting final approval from Finance Manager.');
     
     // Hide inline form and refresh
     cancelInlineApproval();
@@ -1371,7 +1371,7 @@ async function submitInlineApproval() {
     const allocated = Number(String(document.getElementById('inlineApprovalAllocated').value).replace(/,/g, ''));
     const remarks = document.getElementById('inlineApprovalRemarks').value.trim();
     if (!allocated) {
-        alert('Please enter Allocated Amount');
+        alert('Please enter Required Fund');
         return;
     }
 
@@ -1464,7 +1464,7 @@ function showRequestInfoRecord(r) {
         detailRow('Requester', r.requesterName || r.requestedBy) +
         detailRow('Email', r.requesterEmail) +
         detailRow('Next Step', r.requestTo) +
-        detailRow('Allocated Amount', amount ? 'Rs. ' + amount.toLocaleString() : 'Not allocated yet') +
+        detailRow('Required Fund', amount ? 'Rs. ' + amount.toLocaleString() : 'Not entered yet') +
         detailRow('Status', r.statusLabel || r.status) +
         '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
         remarkBlock('Requester', r.remarks) +

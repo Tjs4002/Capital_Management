@@ -21,9 +21,11 @@ transporter.verify((error, success) => {
  * Send a verification email to the user
  * @param {string} toEmail
  * @param {string} token
+ * @param {string} [baseUrl]
  */
-async function sendVerificationEmail(toEmail, token) {
-  const verifyUrl = `${process.env.BASE_URL}/verify-email?token=${token}`;
+async function sendVerificationEmail(toEmail, token, baseUrl) {
+  const rootUrl = (baseUrl || process.env.PUBLIC_BASE_URL || process.env.BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+  const verifyUrl = `${rootUrl}/verify-email?token=${token}`;
 
   try {
     const info = await transporter.sendMail({

@@ -235,7 +235,7 @@
                         <th>Details</th>
                         <th>Date</th>
                         <th>Quantity</th>
-                        <th>Allocated Fund</th>
+                        <th>Available Fund</th>
                         <th>Required Fund</th>
                         <th>Remaining Fund</th>
                         <th>Status</th>
@@ -303,18 +303,67 @@ const monthYear = today.toLocaleString('en-IN', { month: 'short', year: 'numeric
 document.getElementById('pageDay').textContent = monthYear;
 
 let currentFilter = 'all';
+let recordsCache = [];
+
+function recordsAuthToken() {
+    return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+}
+
+function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function(char) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+}
+
+function mapAssetRecord(asset) {
+    return {
+        source: 'asset',
+        _id: String(asset.id || asset.requestId || asset.ticketId || ''),
+        requestId: asset.ticketId || asset.requestId || asset.ticket_id || asset.id,
+        department: asset.department || asset.capitalType || '',
+        details: asset.itemName || asset.assetName || asset.asset_name || '',
+        requesterName: asset.requesterName || asset.userName || '',
+        qty: asset.quantity || asset.qty || 0,
+        requestDate: asset.requestDate || asset.request_date || '',
+        allocatedFund: asset.allocatedFund || asset.allocated_fund || asset.amount || 0,
+        status: asset.statusLabel || asset.status || 'Pending',
+        rawStatus: asset.status || '',
+        remarks: asset.remarks || '',
+        capitalMasterRemarks: asset.capitalMasterRemarks || ''
+    };
+}
+
+async function refreshRecordsCache() {
+    try {
+        const token = recordsAuthToken();
+        const response = await fetch('/api/assets', {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (response.ok) {
+            const data = await response.json();
+            recordsCache = (data.assets || []).map(mapAssetRecord);
+            return recordsCache;
+        }
+    } catch (error) {
+        console.log('Could not load records from API:', error);
+    }
+
+    const capitals = JSON.parse(localStorage.getItem('capitalRecords') || '[]');
+    const assets = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+    recordsCache = [...capitals, ...assets];
+    return recordsCache;
+}
 
 // Initialize page on load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await refreshRecordsCache();
     updateSummary();
     renderRecordsTable();
 });
 
 // Get all records
 function getAllRecords() {
-    const capitals = JSON.parse(localStorage.getItem('capitalRecords') || '[]');
-    const assets = JSON.parse(localStorage.getItem('assetRecords') || '[]');
-    return [...capitals, ...assets];
+    return recordsCache.slice();
 }
 
 // Update summary
@@ -351,7 +400,10 @@ function renderRecordsTable() {
     
     // Filter by type, status, or department
     if (currentFilter === 'pending') {
-        records = records.filter(r => (r.status || '').toLowerCase() === 'pending');
+        records = records.filter(r => {
+            const status = String(r.rawStatus || r.status || '').toLowerCase();
+            return status.includes('pending') || status.includes('awaiting') || status.startsWith('approved_by_');
+        });
     } else if (currentFilter === 'status') {
         // Show only records with a type/department
         records = records.filter(r => r.department || r.type);
@@ -368,7 +420,14 @@ function renderRecordsTable() {
     // Filter by status
     const statusF = document.getElementById('statusFilter').value;
     if (statusF) {
-        records = records.filter(r => (r.status || '') === statusF);
+        const target = statusF.toLowerCase();
+        records = records.filter(r => {
+            const status = String(r.rawStatus || r.status || '').toLowerCase();
+            if (target === 'approved') return status === 'approved_by_md' || String(r.status || '').toLowerCase().includes('approved');
+            if (target === 'denied') return status.startsWith('denied_by_') || String(r.status || '').toLowerCase().includes('denied');
+            if (target === 'pending') return status.includes('pending') || status.includes('awaiting') || status.startsWith('approved_by_');
+            return String(r.status || '') === statusF;
+        });
     }
     
     const tbody = document.getElementById('recordsTableBody');
@@ -376,7 +435,7 @@ function renderRecordsTable() {
         tbody.innerHTML = '<tr class="empty-row"><td colspan="13"><i class="fa-solid fa-inbox" style="margin-right:8px;"></i>No records found. <a href="asset.html">Add a record →</a></td></tr>';
     }
     
-    tbody.innerHTML = records.reverse().map((r, i) => {
+    tbody.innerHTML = records.slice().reverse().map((r, i) => {
         // Status column value (type/category)
         let statusValue = '';
         if (r.department) {
@@ -390,18 +449,19 @@ function renderRecordsTable() {
         }
         let statusBgColor = '#fef3c7';
         let statusTextColor = '#92400e';
-        if (r.status === 'Approved') {
+        const rawStatus = String(r.rawStatus || r.status || '').toLowerCase();
+        if (rawStatus === 'approved_by_md' || String(r.status || '').toLowerCase().includes('approved')) {
             statusBgColor = '#d1fae5';
             statusTextColor = '#065f46';
-        } else if (r.status === 'Denied') {
+        } else if (rawStatus.startsWith('denied_by_') || String(r.status || '').toLowerCase().includes('denied')) {
             statusBgColor = '#fee2e2';
             statusTextColor = '#991b1b';
-        } else if (r.status === 'Pending') {
+        } else {
             statusBgColor = '#fef3c7';
             statusTextColor = '#92400e';
         }
         const statusBadge = r.status 
-            ? `<span style="background:${statusBgColor};color:${statusTextColor};padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">${r.status}</span>`
+            ? `<span style="background:${statusBgColor};color:${statusTextColor};padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">${escapeHtml(r.status)}</span>`
             : '<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">Pending</span>';
         let details = '';
         let quantity = '—';
@@ -418,9 +478,9 @@ function renderRecordsTable() {
             const pendingAmount = (parseFloat(r.allocated) || 0) - (parseFloat(r.used) || 0);
             pending = pendingAmount > 0 ? '₹' + pendingAmount.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '₹0';
         } else {
-            details = r.requesterName || '—';
-            const requestAmount = parseFloat(r.qty || r.requestedFund) || 0;
-            quantity = requestAmount ? requestAmount.toLocaleString('en-IN') : '—';
+            details = r.details || r.requesterName || '—';
+            const requestQuantity = parseFloat(r.qty || r.quantity) || 0;
+            quantity = requestQuantity ? requestQuantity.toLocaleString('en-IN') : '—';
             date = r.requestDate || '—';
 
             const capitalAllocations = JSON.parse(localStorage.getItem('capitalAllocations') || '{}');
@@ -435,7 +495,7 @@ function renderRecordsTable() {
                 pending = '—';
             }
 
-            if (r.status === 'Approved') {
+            if (rawStatus === 'approved_by_md' || String(r.status || '').toLowerCase().includes('approved')) {
                 used = r.allocatedFund ? '₹' + Number(r.allocatedFund).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
             } else {
                 used = '—';
@@ -443,17 +503,17 @@ function renderRecordsTable() {
         }
         return `<tr>
             <td style="font-weight:600;color:var(--navy);">${i + 1}</td>
-            <td><strong style="color:var(--navy);">${r.capitalId || r.requestId || '—'}</strong></td>
-            <td style="text-align:center;font-weight:600;color:var(--accent);">${r.department || '—'}</td>
-            <td>${details}</td>
+            <td><strong style="color:var(--navy);">${escapeHtml(r.capitalId || r.requestId || '—')}</strong></td>
+            <td style="text-align:center;font-weight:600;color:var(--accent);">${escapeHtml(r.department || '—')}</td>
+            <td>${escapeHtml(details)}</td>
             <td style="color:var(--muted);font-size:12px;">${date}</td>
             <td style="text-align:center;font-weight:600;color:var(--accent);">${quantity}</td>
             <td style="text-align:center;font-size:12px;color:#0284c7;font-weight:600;">${allocated}</td>
             <td style="text-align:center;font-size:12px;color:#ca8a04;font-weight:600;">${used}</td>
             <td style="text-align:center;font-size:12px;color:#059669;font-weight:600;">${pending}</td>
             <td>${statusBadge}</td>
-            <td style="font-size:12px;color:var(--muted);">${r.remarks || '—'}</td>
-            <td style="font-size:12px;color:var(--muted);">${r.capitalMasterRemarks || '—'}</td>
+            <td style="font-size:12px;color:var(--muted);">${escapeHtml(r.remarks || '—')}</td>
+            <td style="font-size:12px;color:var(--muted);">${escapeHtml(r.capitalMasterRemarks || '—')}</td>
             <td style="text-align:center;">
                 <button onclick="deleteRecord('${r.source}', '${r._id}')" style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#fecaca';" onmouseout="this.style.background='#fee2e2';">
                     <i class="fa-solid fa-trash"></i> Delete
@@ -464,8 +524,31 @@ function renderRecordsTable() {
 }
 
 // Delete record
-function deleteRecord(source, id) {
+async function deleteRecord(source, id) {
     if (!confirm('Delete this record?')) return;
+
+    if (source === 'asset') {
+        try {
+            const token = recordsAuthToken();
+            const response = await fetch(`/api/assets/${encodeURIComponent(id)}`, {
+                method: 'DELETE',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                alert(data.error || 'This record cannot be deleted now.');
+                return;
+            }
+            await refreshRecordsCache();
+            updateSummary();
+            renderRecordsTable();
+            return;
+        } catch (error) {
+            alert('Connection error. Please try again.');
+            return;
+        }
+    }
+
     const key = source === 'capital' ? 'capitalRecords' : 'assetRecords';
     let records = JSON.parse(localStorage.getItem(key) || '[]');
     records = records.filter(r => r._id !== id);
@@ -479,7 +562,7 @@ function exportTableToCSV() {
     let records = getAllRecords();
     if (currentFilter !== 'all') records = records.filter(r => r.source === currentFilter);
     
-    const headers = ['ID', 'Type', 'Date', 'Quantity', 'Required Fund (₹)', 'Allocated Fund (₹)', 'Remaining Fund (₹)', 'Status', 'Remarks'];
+    const headers = ['ID', 'Type', 'Date', 'Quantity', 'Available Fund (₹)', 'Required Fund (₹)', 'Remaining Fund (₹)', 'Status', 'Remarks'];
     const rows = records.map(r => {
         let qty = '';
         let requiredFund = '';

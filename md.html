@@ -182,7 +182,7 @@
                         <th>Asset Name</th>
                         <th>Requested By</th>
                         <th>Asset Value</th>
-                        <th>Allocated Fund</th>
+                        <th>Required Fund</th>
                         <th>CFO Remarks</th>
                         <th style="text-align:center;">Action</th>
                     </tr>
@@ -212,7 +212,7 @@
                         <th>Capital ID</th>
                         <th>Asset Name</th>
                         <th>Requested By</th>
-                        <th>Final Allocated Fund</th>
+                        <th>Required Fund</th>
                         <th>MD Remarks</th>
                         <th>Approved On</th>
                     </tr>
@@ -279,7 +279,7 @@
                 <div style="margin-bottom:10px;"><strong style="color:var(--muted);">Requested By:</strong><br><span id="approveRequesterName" style="color:var(--navy);font-weight:600;">-</span></div>
                 <div style="margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div><strong style="color:var(--muted);">Asset Value:</strong><br><span id="approveAssetValue" style="color:var(--navy);font-weight:600;">-</span></div>
-                    <div><strong style="color:var(--muted);">Allocated Fund:</strong><br><span id="approveAllocatedFund" style="color:#8b5cf6;font-weight:600;">-</span></div>
+                    <div><strong style="color:var(--muted);">Required Fund:</strong><br><span id="approveAllocatedFund" style="color:#8b5cf6;font-weight:600;">-</span></div>
                 </div>
             </div>
             <div style="margin-bottom:16px;">
@@ -688,7 +688,7 @@ function showRequestInfoFromList(listName, index) {
     ensureRequestInfoBubble();
     document.getElementById('infoBubbleTitle').textContent = r.itemName || r.assetName || 'Request Info';
     document.getElementById('infoBubbleSub').textContent = (r.ticketId || r.requestId || r.id || '-') + ' · ' + (r.objectId || '-');
-    document.getElementById('infoBubbleBody').innerHTML = detailRow('Requester', r.requesterName || r.userName || r.requestedBy) + detailRow('Email', r.requesterEmail) + detailRow('Next Step', r.requestTo) + detailRow('Allocated Amount', amount ? 'Rs. ' + amount.toLocaleString() : 'Not allocated yet') + detailRow('Status', r.statusLabel || r.status) + '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' + remarkBlock('Requester', r.remarks) + remarkBlock('Capital Master', r.capitalMasterRemarks || r.denialReason) + remarkBlock('Finance', r.financeManagerRemarks || r.financeManagerDenialReason) + remarkBlock('CFO', r.cfoRemarks || r.cfoDenialReason) + remarkBlock('MD', r.mdRemarks || r.mdDenialReason);
+    document.getElementById('infoBubbleBody').innerHTML = detailRow('Requester', r.requesterName || r.userName || r.requestedBy) + detailRow('Email', r.requesterEmail) + detailRow('Next Step', r.requestTo) + detailRow('Required Fund', amount ? 'Rs. ' + amount.toLocaleString() : 'Not entered yet') + detailRow('Status', r.statusLabel || r.status) + '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' + remarkBlock('Requester', r.remarks) + remarkBlock('Capital Master', r.capitalMasterRemarks || r.denialReason) + remarkBlock('Finance', r.financeManagerRemarks || r.financeManagerDenialReason) + remarkBlock('CFO', r.cfoRemarks || r.cfoDenialReason) + remarkBlock('MD', r.mdRemarks || r.mdDenialReason);
     document.getElementById('requestInfoBubble').style.display = 'block';
 }
 

@@ -45,14 +45,17 @@
     "capital_type": "Manufacturing",
     "remarks": "per tyre 4000",
     "asset_description": "per tyre 4000",
-    "status": "approved_by_capital_master",
-    "current_step": "Finance Head",
+    "status": "approved_by_finance_manager",
+    "current_step": "CFO",
     "requested_on": "2026-04-29T06:39:20.635Z",
     "request_date": "2026-03-22",
     "capital_master_remarks": "",
     "capital_master_approved_by": 2,
     "capital_master_approved_on": "2026-04-29T06:42:57.725Z",
-    "allocated_fund": 40000
+    "allocated_fund": 40000,
+    "finance_manager_remarks": "test route check",
+    "finance_manager_approved_by": 10,
+    "finance_manager_approved_on": "2026-05-06T04:22:42.802Z"
   },
   {
     "id": 3,

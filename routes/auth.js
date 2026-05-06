@@ -7,14 +7,31 @@ const { generateToken } = require('../utils/tokenStore');         // ADD
 const { sendVerificationEmail } = require('../utils/mailer');     // ADD
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const usersJsonPath = path.join(__dirname, '../data/users.json');
+const getUsernameFromEmail = (email) => String(email || 'user').split('@')[0];
+function getBaseUrl(req) {
+  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL.replace(/\/$/, '');
+  const host = req.get('host') || '';
+  const isLocalHost = /^localhost(?::\d+)?$/i.test(host) || /^127\.0\.0\.1(?::\d+)?$/i.test(host);
+  if (isLocalHost) {
+    const port = host.split(':')[1] || process.env.PORT || '5000';
+    const networks = os.networkInterfaces();
+    for (const addresses of Object.values(networks)) {
+      const address = (addresses || []).find(item => item.family === 'IPv4' && !item.internal);
+      if (address) return `${req.protocol}://${address.address}:${port}`;
+    }
+  }
+  return (host ? `${req.protocol}://${host}` : (process.env.BASE_URL || 'http://localhost:5000')).replace(/\/$/, '');
+}
 
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name, department, phone, role } = req.body;
+    const { email, password, name, username, department, phone, role } = req.body;
+    const cleanUsername = String(username || getUsernameFromEmail(email)).trim();
 
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name are required' });
@@ -40,20 +57,23 @@ router.post('/register', async (req, res) => {
     const newUserData = {
       id: user.id,
       email: user.email,
+      username: cleanUsername,
       password: user.password,
       name: user.name,
       role: user.role,
       department: user.department,
       phone: user.phone,
       status: user.status,
-      isVerified: false
+      isVerified: false,
+      verification_email_sent_at: null
     };
     usersData.push(newUserData);
-    fs.writeFileSync(usersJsonPath, JSON.stringify(usersData, null, 2));
 
     // Send verification email                                     // ADD
     const verifyToken = generateToken(email);                      // ADD
-    await sendVerificationEmail(email, verifyToken);               // ADD
+    await sendVerificationEmail(email, verifyToken, getBaseUrl(req));               // ADD
+    newUserData.verification_email_sent_at = new Date().toISOString();
+    fs.writeFileSync(usersJsonPath, JSON.stringify(usersData, null, 2));
 
     res.json({
       success: true,
