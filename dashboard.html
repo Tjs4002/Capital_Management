@@ -299,14 +299,13 @@
                         <th>Item Name</th>
                         <th>Quantity</th>
                         <th style="text-align:center;">Department</th>
-                        <th>Requester Remarks</th>
                         <th>Request Date</th>
                         <th style="text-align:left;">Status</th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="assetTableBody">
-                    <tr class="empty-row"><td colspan="12">No Capital requests yet. <a href="asset.html">Submit one →</a></td></tr>
+                    <tr class="empty-row"><td colspan="8">No Capital requests yet. <a href="asset.html">Submit one →</a></td></tr>
                 </tbody>
             </table>
         </div>
@@ -1179,7 +1178,7 @@ function renderAssetTable() {
     var d = getRecords();
     var tbody = document.getElementById('assetTableBody');
     if (!d.assets.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="12">No capital requests yet. <a href="asset.html">Submit one →</a></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No capital requests yet. <a href="asset.html">Submit one →</a></td></tr>';
         return;
     }
     tbody.innerHTML = d.assets.slice().reverse().map(function(r, i) {
@@ -1214,7 +1213,7 @@ function renderAssetTable() {
         window.requestDetailsMap = window.requestDetailsMap || {};
         window.requestDetailsMap[requestKey] = r;
         
-        return '<tr style="cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'rgba(59,130,246,0.05)\';" onmouseout="this.style.background=\'transparent\';" onclick="openRequestDetailsModal(\'' + requestKey + '\')">' +
+        return '<tr style="cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'rgba(59,130,246,0.05)\';" onmouseout="this.style.background=\'transparent\';" onclick="showDashboardRequestInfo(window.requestDetailsMap[\'' + requestKey + '\'])">' +
             '<td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td>' +
             '<td><strong style="color:var(--navy);">' + (r.requestId || '—') + '</strong></td>' +
             '<td style="text-align:center;font-weight:600;color:var(--accent);">' + (r.capitalType || '—') + '</td>' +
@@ -1326,6 +1325,9 @@ function openRequestDetailsModal(requestKey) {
         openNotificationReasonModal(request);
         return;
     }
+
+    showDashboardRequestInfo(request);
+    return;
     
     // If this is a request object with full details, show full details modal
     // Populate basic details
@@ -1670,13 +1672,55 @@ function dashboardStatusBadge(record) {
     return '<span style="background:' + bg + ';color:' + color + ';padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + escapeHtml(status) + '</span>';
 }
 
+function ensureRequestInfoBubble() {
+    if (document.getElementById('requestInfoBubble')) return;
+    document.body.insertAdjacentHTML('beforeend', '<div id="requestInfoBubble" style="display:none;position:fixed;right:24px;bottom:24px;width:min(420px,calc(100vw - 48px));max-height:70vh;overflow:auto;background:var(--card);border:1px solid var(--border);box-shadow:0 18px 45px rgba(15,23,42,.18);border-radius:12px;z-index:500;padding:18px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;"><div><div id="infoBubbleTitle" style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);font-size:15px;">Request Info</div><div id="infoBubbleSub" style="font-size:11px;color:var(--muted);margin-top:2px;"></div></div><button onclick="closeInfoBubble()" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:white;color:var(--muted);cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></div><div id="infoBubbleBody" style="font-size:12px;color:var(--text);line-height:1.5;"></div></div>');
+}
+
+function detailRow(label, value) {
+    return '<div style="display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--border);padding:7px 0;"><span style="color:var(--muted);font-weight:700;">' + label + '</span><span style="text-align:right;">' + escapeHtml(value || '-') + '</span></div>';
+}
+
+function moneyValue(value) {
+    const amount = Number(value || 0);
+    return amount ? 'Rs. ' + amount.toLocaleString('en-IN') : '-';
+}
+
+function remarkBlock(label, value) {
+    return '<div style="margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;"><div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:4px;">' + label + '</div><div>' + escapeHtml(value || '-') + '</div></div>';
+}
+
+function showDashboardRequestInfo(r) {
+    if (!r) return;
+    ensureRequestInfoBubble();
+    document.getElementById('infoBubbleTitle').textContent = r.itemName || r.assetName || 'Request Info';
+    document.getElementById('infoBubbleSub').textContent = (r.ticketId || r.requestId || r.id || '-') + ' - ' + (r.objectId || '-');
+    document.getElementById('infoBubbleBody').innerHTML =
+        detailRow('Requester', r.requesterName || r.userName || r.requestedBy) +
+        detailRow('Email', r.requesterEmail) +
+        detailRow('Next Step', r.requestTo) +
+        detailRow('Allowed Amount', Number(r.allowedAmount || r.departmentAllocatedFund || 0) ? moneyValue(r.allowedAmount || r.departmentAllocatedFund) : 'Funds not allocated') +
+        detailRow('Allocated Amount', moneyValue(r.requiredFund || r.allocatedFund || r.amount || r.assetValue)) +
+        detailRow('Remaining Fund', moneyValue(r.remainingFund)) +
+        detailRow('Status', r.statusLabel || r.status) +
+        '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
+        remarkBlock('Requester', r.remarks) +
+        remarkBlock('Capital Master', r.capitalMasterRemarks || r.denialReason) +
+        remarkBlock('Finance', r.financeManagerRemarks || r.financeManagerDenialReason) +
+        remarkBlock('CFO', r.cfoRemarks || r.cfoDenialReason) +
+        remarkBlock('MD', r.mdRemarks || r.mdDenialReason);
+    document.getElementById('requestInfoBubble').style.display = 'block';
+}
+
+function closeInfoBubble() {
+    const bubble = document.getElementById('requestInfoBubble');
+    if (bubble) bubble.style.display = 'none';
+}
+
 function dashboardInfo(index) {
     const r = dashboardAssetRecords[index];
     if (!r) return;
-    const key = 'dashboard_req_' + (r.id || r.requestId || index);
-    window.requestDetailsMap = window.requestDetailsMap || {};
-    window.requestDetailsMap[key] = r;
-    openRequestDetailsModal(key);
+    showDashboardRequestInfo(r);
 }
 
 function openDashboardSearchResult(index) {
@@ -1685,10 +1729,7 @@ function openDashboardSearchResult(index) {
     closeSearchDropdown();
     const input = document.getElementById('globalSearch');
     if (input) input.value = '';
-    const key = 'dashboard_req_' + (r.id || r.requestId || index);
-    window.requestDetailsMap = window.requestDetailsMap || {};
-    window.requestDetailsMap[key] = r;
-    openRequestDetailsModal(key);
+    showDashboardRequestInfo(r);
 }
 
 function closeSearchDropdown() {
@@ -1741,7 +1782,7 @@ function ticketSearchText(record) {
 function renderDashboardAssetRows(records, emptyMessage) {
     const tbody = document.getElementById('assetTableBody');
     if (!records.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">' + escapeHtml(emptyMessage) + '</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">' + escapeHtml(emptyMessage) + '</td></tr>';
         return;
     }
     tbody.innerHTML = records.map(function(r, i) {
@@ -1751,7 +1792,6 @@ function renderDashboardAssetRows(records, emptyMessage) {
             '<td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td>' +
             '<td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td>' +
             '<td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td>' +
-            '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' +
             '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td>' +
             '<td>' + dashboardStatusBadge(r) + '</td>' +
             '<td style="text-align:center;"><button onclick="dashboardInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></td>' +
@@ -1762,7 +1802,7 @@ function renderDashboardAssetRows(records, emptyMessage) {
 async function renderAssetTable() {
     const tbody = document.getElementById('assetTableBody');
     const table = tbody.closest('table');
-    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
     try {
         const response = await fetch('/api/assets', {
             headers: { 'Authorization': 'Bearer ' + dashboardAuthToken() }
@@ -1773,7 +1813,7 @@ async function renderAssetTable() {
         dashboardAssetRecords = JSON.parse(localStorage.getItem('assetRecords') || '[]');
     }
     if (!dashboardAssetRecords.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet. <a href="asset.html">Submit one</a></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No capital requests yet. <a href="asset.html">Submit one</a></td></tr>';
         return;
     }
     renderDashboardAssetRows(dashboardAssetRecords, 'No capital requests yet.');
@@ -1879,9 +1919,9 @@ async function renderAssetTable() {
     if (!dashboardDataLoaded) await loadDashboardData();
     const tbody = document.getElementById('assetTableBody');
     const table = tbody.closest('table');
-    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
     if (!dashboardAssetRecords.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet. <a href="asset.html">Submit one</a></td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No capital requests yet. <a href="asset.html">Submit one</a></td></tr>';
         return;
     }
     renderDashboardAssetRows(dashboardAssetRecords, 'No capital requests yet.');

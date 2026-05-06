@@ -260,14 +260,13 @@
                         <th>Item Name</th>
                         <th>Quantity</th>
                         <th style="text-align:center;">Department</th>
-                        <th>Requester Remarks</th>
                         <th>Request Date</th>
                         <th style="text-align:left;">Status</th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="allRequestsTableBody">
-                    <tr class="empty-row"><td colspan="9">No request history yet.</td></tr>
+                    <tr class="empty-row"><td colspan="8">No request history yet.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1394,7 +1393,7 @@ async function renderPendingAssetRequests() {
 
     if (pendingCount) pendingCount.textContent = records.length ? records.length + ' Remaining' : 'All Processed';
     if (!records.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No tickets waiting for Capital Master.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No tickets waiting for Capital Master.</td></tr>';
         return;
     }
 
@@ -1519,6 +1518,11 @@ function detailRow(label, value) {
     return '<div style="display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--border);padding:7px 0;"><span style="color:var(--muted);font-weight:700;">' + label + '</span><span style="text-align:right;">' + escapeHtml(value || '-') + '</span></div>';
 }
 
+function moneyValue(value) {
+    const amount = Number(value || 0);
+    return amount ? 'Rs. ' + amount.toLocaleString('en-IN') : '-';
+}
+
 async function checkFundAvailabilityRealTime() {
     const allocatedInput = document.getElementById('inlineApprovalAllocated');
     const statusDiv = document.getElementById('fundAvailabilityStatus');
@@ -1537,6 +1541,14 @@ async function checkFundAvailabilityRealTime() {
 
         const department = currentApprovalRequest.department || currentApprovalRequest.capitalType || '';
         const allocation = (data.allocations || []).find(item => String(item.capital_type || '').toLowerCase() === String(department).toLowerCase());
+        if (!allocation || Number(allocation.allocated_amount || 0) <= 0) {
+            statusDiv.style.display = 'flex';
+            statusDiv.style.background = '#fee2e2';
+            statusDiv.style.color = '#7f1d1d';
+            statusDiv.style.borderLeft = '3px solid #ef4444';
+            statusDiv.innerHTML = '<i class="fa-solid fa-x" style="color:#ef4444;font-size:14px;"></i> Funds not allocated for ' + escapeHtml(department || 'this department');
+            return;
+        }
         const availableFund = Number(allocation ? allocation.available_amount : 0);
         statusDiv.style.display = 'flex';
 
@@ -1579,12 +1591,13 @@ function showRequestInfoRecord(r) {
     const amount = Number(r.amount || r.assetValue || r.allocatedFund || 0);
     ensureRequestInfoBubble();
     document.getElementById('infoBubbleTitle').textContent = r.itemName || r.assetName || 'Request Info';
-    document.getElementById('infoBubbleSub').textContent = (r.ticketId || r.requestId || '-') + ' · ' + (r.objectId || '-');
+    document.getElementById('infoBubbleSub').textContent = (r.ticketId || r.requestId || '-') + ' - ' + (r.objectId || '-');
     document.getElementById('infoBubbleBody').innerHTML =
         detailRow('Requester', r.requesterName || r.requestedBy) +
         detailRow('Email', r.requesterEmail) +
         detailRow('Next Step', r.requestTo) +
-        detailRow('Required Fund', amount ? 'Rs. ' + amount.toLocaleString() : 'Not entered yet') +
+        detailRow('Allowed Amount', Number(r.allowedAmount || r.departmentAllocatedFund || 0) ? moneyValue(r.allowedAmount || r.departmentAllocatedFund) : 'Funds not allocated') +
+        detailRow('Allocated Amount', amount ? 'Rs. ' + amount.toLocaleString('en-IN') : 'Not entered yet') +
         detailRow('Status', r.statusLabel || r.status) +
         '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
         remarkBlock('Requester', r.remarks) +
@@ -1603,7 +1616,7 @@ function closeInfoBubble() {
 async function renderPendingAssetRequests() {
     const tbody = document.getElementById('pendingAssetTableBody');
     const table = tbody.closest('table');
-    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
     let records = [];
     try {
         const response = await fetch('/api/assets/pending-capital-master', {
@@ -1617,12 +1630,12 @@ async function renderPendingAssetRequests() {
     window.capitalVisibleRecords = records;
     document.getElementById('pendingCount').textContent = records.length ? records.length + ' Remaining' : 'All Processed';
     if (!records.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No tickets waiting for Capital Master.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No tickets waiting for Capital Master.</td></tr>';
         return;
     }
     tbody.innerHTML = records.map((r, i) => {
         const status = '<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + escapeHtml(r.statusLabel || 'Pending Capital Master') + '</span>';
-        return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td><td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + status + '</td><td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;"><button onclick="approveAssetRequest(\'' + r.id + '\')" title="Approve" style="width:30px;height:30px;border:none;border-radius:7px;background:#dcfce7;color:#15803d;cursor:pointer;"><i class="fa-solid fa-check"></i></button><button onclick="denyAssetRequest(\'' + r.id + '\')" title="Decline" style="width:30px;height:30px;border:none;border-radius:7px;background:#fee2e2;color:#991b1b;cursor:pointer;"><i class="fa-solid fa-ban"></i></button><button onclick="showRequestInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td></tr>';
+        return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + status + '</td><td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;"><button onclick="approveAssetRequest(\'' + r.id + '\')" title="Approve" style="width:30px;height:30px;border:none;border-radius:7px;background:#dcfce7;color:#15803d;cursor:pointer;"><i class="fa-solid fa-check"></i></button><button onclick="denyAssetRequest(\'' + r.id + '\')" title="Decline" style="width:30px;height:30px;border:none;border-radius:7px;background:#fee2e2;color:#991b1b;cursor:pointer;"><i class="fa-solid fa-ban"></i></button><button onclick="showRequestInfo(' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td></tr>';
     }).join('');
 }
 
@@ -1651,7 +1664,7 @@ async function renderAllAssetRequests() {
     const countEl = document.getElementById('allRequestCount');
     if (countEl) countEl.textContent = records.length ? records.length + ' Total' : '';
     if (!records.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No request history yet.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No request history yet.</td></tr>';
         return;
     }
     tbody.innerHTML = records.map((r, i) => {

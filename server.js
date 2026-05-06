@@ -24,6 +24,7 @@ const ASSETS_FILE = path.join(DATA_DIR, 'assets.json');
 const ALLOCATIONS_FILE = path.join(DATA_DIR, 'allocations.json');
 const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 
 // Initialize data files
 function initDataFiles() {
@@ -82,10 +83,55 @@ const authMiddleware = (req, res, next) => {
     if (!authHeader) return res.status(401).json({ error: 'Authorization header missing' });
     const token = authHeader.replace('Bearer ', '');
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+    const users = readFile(USERS_FILE);
+    const userIndex = users.findIndex(u => u.id == decoded.id);
+    if (userIndex === -1) return res.status(401).json({ error: 'User no longer exists' });
+
+    const user = users[userIndex];
+    if (user.force_logout_after) {
+      const forcedAt = new Date(user.force_logout_after).getTime();
+      const issuedAt = Number(decoded.iat || 0) * 1000;
+      if (forcedAt && issuedAt && issuedAt <= forcedAt) {
+        return res.status(401).json({ error: 'Session expired. Please log in again.' });
+      }
+    }
+
+    const now = Date.now();
+    const lastSeenAt = user.last_seen_at ? new Date(user.last_seen_at).getTime() : 0;
+    if (!lastSeenAt || now - lastSeenAt > 60000) {
+      users[userIndex].last_seen_at = new Date(now).toISOString();
+      writeFile(USERS_FILE, users);
+    }
+
+    req.user = { ...decoded, role: user.role, username: user.username || decoded.username, email: user.email };
     next();
   } catch { res.status(401).json({ error: 'Invalid or expired token' }); }
 };
+
+function getUserSessionState(user) {
+  const lastSeenAt = user.last_seen_at ? new Date(user.last_seen_at).getTime() : 0;
+  const forcedAt = user.force_logout_after ? new Date(user.force_logout_after).getTime() : 0;
+  const online = Boolean(lastSeenAt) && lastSeenAt > forcedAt && (Date.now() - lastSeenAt <= ONLINE_WINDOW_MS);
+  return online ? 'online' : 'offline';
+}
+
+function sanitizeUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username || getUsernameFromEmail(user.email),
+    name: user.name,
+    role: user.role,
+    department: user.department || '',
+    status: user.status || 'active',
+    sessionStatus: getUserSessionState(user),
+    isOnline: getUserSessionState(user) === 'online',
+    phone: user.phone || '',
+    joinedDate: user.created_at ? String(user.created_at).slice(0, 10) : (user.verification_email_sent_at ? String(user.verification_email_sent_at).slice(0, 10) : (user.last_login_at ? String(user.last_login_at).slice(0, 10) : '')),
+    lastLoginAt: user.last_login_at || '',
+    lastSeenAt: user.last_seen_at || ''
+  };
+}
 
 // Auth routes
 app.post('/api/auth/register', async (req, res) => {
@@ -109,7 +155,11 @@ app.post('/api/auth/register', async (req, res) => {
       role: role || 'requester',
       status: 'active',
       isVerified: false,
-      verification_email_sent_at: null
+      verification_email_sent_at: null,
+      created_at: new Date().toISOString(),
+      last_login_at: null,
+      last_seen_at: null,
+      force_logout_after: null
     };
     const verifyToken = generateToken(email);
     await sendVerificationEmail(email, verifyToken, getBaseUrl(req));
@@ -133,23 +183,34 @@ app.post('/api/auth/login', (req, res) => {
     if (user.isVerified === false) return res.status(403).json({ error: 'Please verify your email before logging in.' });
     if (!user.username) {
       user.username = getUsernameFromEmail(user.email);
-      writeFile(USERS_FILE, users);
     }
+    user.last_login_at = new Date().toISOString();
+    user.last_seen_at = user.last_login_at;
+    user.force_logout_after = null;
+    writeFile(USERS_FILE, users);
 
     const token = jwt.sign({ id: user.id, email: user.email, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ success: true, message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role } });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.post('/api/auth/logout', (req, res) => {
-  res.json({ success: true, message: 'Logged out' });
+app.post('/api/auth/logout', authMiddleware, (req, res) => {
+  try {
+    const users = readFile(USERS_FILE);
+    const userIndex = users.findIndex(u => u.id == req.user.id);
+    if (userIndex !== -1) {
+      users[userIndex].force_logout_after = new Date().toISOString();
+      writeFile(USERS_FILE, users);
+    }
+    res.json({ success: true, message: 'Logged out' });
+  } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 // Users routes
 app.get('/api/users', authMiddleware, (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Unauthorized' });
-    const users = readFile(USERS_FILE).map(u => ({ id: u.id, email: u.email, username: u.username || getUsernameFromEmail(u.email), name: u.name, role: u.role, department: u.department, status: u.status }));
+    const users = readFile(USERS_FILE).map(sanitizeUser);
     res.json({ success: true, users, total: users.length });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
@@ -158,8 +219,7 @@ app.get('/api/users/:id', authMiddleware, (req, res) => {
   try {
     const user = readFile(USERS_FILE).find(u => u.id == req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const { password, ...userWithoutPassword } = user;
-    res.json({ success: true, user: userWithoutPassword });
+    res.json({ success: true, user: sanitizeUser(user) });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
@@ -178,10 +238,23 @@ app.put('/api/users/:id', authMiddleware, (req, res) => {
 app.delete('/api/users/:id', authMiddleware, (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Unauthorized' });
+    if (String(req.user.id) === String(req.params.id)) return res.status(400).json({ error: 'You cannot delete your own account' });
     let users = readFile(USERS_FILE);
     users = users.filter(u => u.id != req.params.id);
     writeFile(USERS_FILE, users);
     res.json({ success: true, message: 'User deleted' });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/users/:id/force-logout', authMiddleware, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Unauthorized' });
+    let users = readFile(USERS_FILE);
+    const userIndex = users.findIndex(u => u.id == req.params.id);
+    if (userIndex === -1) return res.status(404).json({ error: 'User not found' });
+    users[userIndex].force_logout_after = new Date().toISOString();
+    writeFile(USERS_FILE, users);
+    res.json({ success: true, message: 'User logged out successfully' });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
@@ -260,6 +333,7 @@ function normalizeAsset(asset) {
     requestTo: workflowSteps[asset.status] || 'Closed',
     allocatedFund: requiredFund,
     requiredFund,
+    allowedAmount: departmentAllocatedFund,
     departmentAllocatedFund,
     remainingFund,
     capitalMasterRemarks: asset.capital_master_remarks || '',
@@ -425,9 +499,12 @@ function updateTicket(req, res, options) {
         const allocatedFund = Number(req.body.allocatedFund || req.body.allocated_fund || 0);
         if (allocatedFund <= 0) return res.status(400).json({ error: 'Required fund is required' });
         const allocation = findAllocationForDepartment(asset.department || asset.capital_type);
+        if (!allocation || Number(allocation.allocated_amount || 0) <= 0) {
+          return res.status(400).json({ error: `Funds not allocated for ${asset.department || asset.capital_type || 'department'}` });
+        }
         const availableFund = Number(allocation ? allocation.available_amount : 0);
         if (availableFund < allocatedFund) {
-          return res.status(400).json({ error: `Insufficient funds for ${asset.department || asset.capital_type || 'department'}. Available: ${availableFund}` });
+          return res.status(400).json({ error: `Insufficient funds for ${asset.department || asset.capital_type || 'department'}. Available: ${availableFund}. Required: ${allocatedFund}` });
         }
         asset.allocated_fund = allocatedFund;
         asset.amount = allocatedFund;
@@ -493,6 +570,17 @@ app.post('/api/assets', authMiddleware, (req, res) => {
 
     if (!itemName || quantity <= 0) {
       return res.status(400).json({ error: 'Item name and quantity are required' });
+    }
+    if (!department) {
+      return res.status(400).json({ error: 'Department is required' });
+    }
+
+    const allocation = findAllocationForDepartment(department);
+    if (!allocation || Number(allocation.allocated_amount || 0) <= 0) {
+      return res.status(400).json({ error: `Funds not allocated for ${department}` });
+    }
+    if (Number(allocation.available_amount || 0) <= 0) {
+      return res.status(400).json({ error: `Insufficient funds for ${department}. Available: ${Number(allocation.available_amount || 0)}` });
     }
 
     let assets = readFile(ASSETS_FILE);

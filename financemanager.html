@@ -762,8 +762,8 @@ function showRequestInfoFromList(listName, index) {
         detailRow('Requester', r.requesterName || r.userName || r.requestedBy) +
         detailRow('Email', r.requesterEmail) +
         detailRow('Next Step', r.requestTo) +
-        detailRow('Allocated Fund', moneyValue(r.departmentAllocatedFund)) +
-        detailRow('Required Fund', moneyValue(r.requiredFund || r.allocatedFund || r.amount || r.assetValue)) +
+        detailRow('Allowed Amount', Number(r.allowedAmount || r.departmentAllocatedFund || 0) ? moneyValue(r.allowedAmount || r.departmentAllocatedFund) : 'Funds not allocated') +
+        detailRow('Allocated Amount', moneyValue(r.requiredFund || r.allocatedFund || r.amount || r.assetValue)) +
         detailRow('Remaining Fund', moneyValue(r.remainingFund)) +
         detailRow('Status', r.statusLabel || r.status) +
         '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
@@ -781,14 +781,12 @@ function closeInfoBubble() {
 }
 
 function setCompactHeaders(tbody, includeCapitalMasterRemarks) {
-    const capitalMasterColumn = includeCapitalMasterRemarks ? '<th>Capital Master Remarks</th>' : '';
-    tbody.closest('table').querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Allocated Fund</th><th>Required Fund</th><th>Remaining Fund</th><th>Requester Remarks</th>' + capitalMasterColumn + '<th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+    tbody.closest('table').querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Allocated Fund</th><th>Required Fund</th><th>Remaining Fund</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
 }
 
 function compactRow(r, i, listName, extraActions, includeCapitalMasterRemarks) {
     const status = '<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">' + escapeHtml(r.statusLabel || r.status || 'Pending') + '</span>';
-    const capitalMasterCell = includeCapitalMasterRemarks ? '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.capitalMasterRemarks || '-') + '</td>' : '';
-    return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || r.id || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="font-size:12px;color:#0284c7;font-weight:700;">' + escapeHtml(moneyValue(r.departmentAllocatedFund)) + '</td><td style="font-size:12px;color:#ca8a04;font-weight:700;">' + escapeHtml(moneyValue(r.requiredFund || r.allocatedFund || r.amount || r.assetValue)) + '</td><td style="font-size:12px;color:#059669;font-weight:700;">' + escapeHtml(moneyValue(r.remainingFund)) + '</td><td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' + capitalMasterCell + '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + status + '</td><td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;">' + (extraActions || '') + '<button onclick="showRequestInfoFromList(\'' + listName + '\',' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td></tr>';
+    return '<tr><td style="font-weight:600;color:var(--navy);">' + (i + 1) + '</td><td><strong style="color:var(--navy);">' + escapeHtml(r.ticketId || r.requestId || r.id || '-') + '</strong><br><span style="font-size:11px;color:var(--muted);">' + escapeHtml(r.objectId || '-') + '</span></td><td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td><td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td><td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">' + escapeHtml(r.department || '-') + '</span></td><td style="font-size:12px;color:#0284c7;font-weight:700;">' + escapeHtml(moneyValue(r.departmentAllocatedFund)) + '</td><td style="font-size:12px;color:#ca8a04;font-weight:700;">' + escapeHtml(moneyValue(r.requiredFund || r.allocatedFund || r.amount || r.assetValue)) + '</td><td style="font-size:12px;color:#059669;font-weight:700;">' + escapeHtml(moneyValue(r.remainingFund)) + '</td><td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td><td>' + status + '</td><td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;">' + (extraActions || '') + '<button onclick="showRequestInfoFromList(\'' + listName + '\',' + i + ')" title="More info" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td></tr>';
 }
 
 function renderPendingRequests(requests) {
@@ -798,7 +796,7 @@ function renderPendingRequests(requests) {
     setCompactHeaders(tbody, true);
     document.getElementById('pendingCount').textContent = allPendingRequests.length;
     if (!allPendingRequests.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="13">No requests pending review.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="11">No requests pending review.</td></tr>';
         return;
     }
     tbody.innerHTML = allPendingRequests.map((req, idx) => {
@@ -813,7 +811,7 @@ function renderApprovedRequests(requests) {
     const tbody = document.getElementById('approvedRequestsTableBody');
     setCompactHeaders(tbody);
     document.getElementById('approvedCountBadge').textContent = window.financeApprovedRecords.length;
-    tbody.innerHTML = window.financeApprovedRecords.length ? window.financeApprovedRecords.map((r, i) => compactRow(r, i, 'financeApprovedRecords', '')).join('') : '<tr class="empty-row"><td colspan="12">No approved requests yet.</td></tr>';
+    tbody.innerHTML = window.financeApprovedRecords.length ? window.financeApprovedRecords.map((r, i) => compactRow(r, i, 'financeApprovedRecords', '')).join('') : '<tr class="empty-row"><td colspan="11">No approved requests yet.</td></tr>';
 }
 
 function renderDeniedRequests(requests) {
@@ -821,7 +819,7 @@ function renderDeniedRequests(requests) {
     const tbody = document.getElementById('deniedRequestsTableBody');
     setCompactHeaders(tbody);
     document.getElementById('deniedCountBadge').textContent = window.financeDeniedRecords.length;
-    tbody.innerHTML = window.financeDeniedRecords.length ? window.financeDeniedRecords.map((r, i) => compactRow(r, i, 'financeDeniedRecords', '')).join('') : '<tr class="empty-row"><td colspan="12">No denied requests yet.</td></tr>';
+    tbody.innerHTML = window.financeDeniedRecords.length ? window.financeDeniedRecords.map((r, i) => compactRow(r, i, 'financeDeniedRecords', '')).join('') : '<tr class="empty-row"><td colspan="11">No denied requests yet.</td></tr>';
 }
 
 // Update status counts
@@ -900,7 +898,7 @@ function createAllRequestsSection() {
     if (document.getElementById('allRequestsTableBody')) return;
     const footer = document.querySelector('.about-footer');
     if (!footer) return;
-    footer.insertAdjacentHTML('beforebegin', '<div class="full-section" style="margin-top:24px;"><div class="sc-header"><div class="sc-title"><span class="sc-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fa-solid fa-clock-rotate-left"></i></span>All Requests</div><span id="allRequestCount" style="background:#e0f2fe;color:#0369a1;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;"></span></div><div style="overflow-x:auto;"><table class="mini-table"><thead><tr><th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Allocated Fund</th><th>Required Fund</th><th>Remaining Fund</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th></tr></thead><tbody id="allRequestsTableBody"><tr class="empty-row"><td colspan="12">No request history yet.</td></tr></tbody></table></div></div>');
+    footer.insertAdjacentHTML('beforebegin', '<div class="full-section" style="margin-top:24px;"><div class="sc-header"><div class="sc-title"><span class="sc-icon" style="background:#ede9fe;color:#7c3aed;"><i class="fa-solid fa-clock-rotate-left"></i></span>All Requests</div><span id="allRequestCount" style="background:#e0f2fe;color:#0369a1;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;"></span></div><div style="overflow-x:auto;"><table class="mini-table"><thead><tr><th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Allocated Fund</th><th>Required Fund</th><th>Remaining Fund</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th></tr></thead><tbody id="allRequestsTableBody"><tr class="empty-row"><td colspan="11">No request history yet.</td></tr></tbody></table></div></div>');
 }
 
 async function renderAllRequests() {
@@ -919,7 +917,7 @@ async function renderAllRequests() {
     }
     window.financeAllRecords = records;
     document.getElementById('allRequestCount').textContent = records.length ? records.length + ' Total' : '';
-    tbody.innerHTML = records.length ? records.map((r, i) => compactRow(r, i, 'financeAllRecords', '')).join('') : '<tr class="empty-row"><td colspan="12">No request history yet.</td></tr>';
+    tbody.innerHTML = records.length ? records.map((r, i) => compactRow(r, i, 'financeAllRecords', '')).join('') : '<tr class="empty-row"><td colspan="11">No request history yet.</td></tr>';
 }
 
 const baseInitializePage = initializePage;

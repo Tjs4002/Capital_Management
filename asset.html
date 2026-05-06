@@ -204,14 +204,13 @@
                         <th>Item Name</th>
                         <th>Quantity</th>
                         <th style="text-align:center;">Department</th>
-                        <th>Requester Remarks</th>
                         <th>Request Date</th>
                         <th style="text-align:left;">Status</th>
                         <th style="text-align:center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="assetTableBody">
-                    <tr class="empty-row"><td colspan="9">No capital requests yet. <a href="asset.html">Submit one →</a></td></tr>
+                    <tr class="empty-row"><td colspan="8">No capital requests yet. <a href="asset.html">Submit one →</a></td></tr>
                 </tbody>
             </table>
         </div>
@@ -386,7 +385,7 @@ async function renderAssetTable() {
 
     if (!records.length) {
         assetRecordsCache = [];
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No capital requests yet.</td></tr>';
         return;
     }
     assetRecordsCache = records;
@@ -492,7 +491,7 @@ async function renderAssetTable() {
 
     assetRecordsCache = records;
     if (!records.length) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No capital requests yet.</td></tr>';
         return;
     }
 
@@ -512,7 +511,6 @@ async function renderAssetTable() {
             '<td style="font-weight:600;color:var(--navy);">' + escapeHtml(r.itemName || r.assetName || '-') + '</td>' +
             '<td style="text-align:center;font-weight:600;color:var(--accent);">' + escapeHtml(r.qty || r.quantity || '-') + '</td>' +
             '<td style="text-align:center;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;display:inline-block;">' + escapeHtml(r.department || '-') + '</span></td>' +
-            '<td style="font-size:12px;color:var(--muted);max-width:220px;">' + escapeHtml(r.remarks || '-') + '</td>' +
             '<td style="color:var(--muted);font-size:12px;">' + escapeHtml(r.requestDate || '-') + '</td>' +
             '<td>' + statusBadge + '</td>' +
             '<td style="text-align:center;"><div style="display:flex;gap:6px;justify-content:center;align-items:center;">' + editButton + deleteButton + '<button title="More info" onclick="showRequestInfo(' + i + ')" style="width:30px;height:30px;border:none;border-radius:7px;background:#ecfdf5;color:#047857;cursor:pointer;"><i class="fa-solid fa-circle-info"></i></button></div></td>' +

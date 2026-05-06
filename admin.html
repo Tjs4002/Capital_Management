@@ -141,7 +141,7 @@
     
     // Check if user is admin
     const user = JSON.parse(currentUser);
-    if (user.role !== 'Admin') {
+    if (String(user.role || '').toLowerCase() !== 'admin') {
         // Non-admin users cannot access admin panel
         window.location.href = 'dashboard.html';
     }
@@ -348,13 +348,12 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
                     <p style="font-size: 13px; color: var(--muted);">Manage system users and their permissions</p>
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn-primary" onclick="refreshUsers()">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
                     <button class="btn-secondary" onclick="exportToExcel()">
                         <i class="fa-solid fa-download"></i> Export
                     </button>
-                    <button class="btn-secondary" onclick="document.getElementById('excelInput').click()">
-                        <i class="fa-solid fa-upload"></i> Import
-                    </button>
-                    <input type="file" id="excelInput" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importFromExcel(event)">
                 </div>
             </div>
 
@@ -366,15 +365,15 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
                 </div>
                 <div class="stat-summary">
                     <div class="stat-number" id="activeUsers">0</div>
-                    <div class="stat-label">Active Users</div>
+                    <div class="stat-label">Online Users</div>
                 </div>
                 <div class="stat-summary">
                     <div class="stat-number" id="admins">0</div>
-                    <div class="stat-label">Admins</div>
+                    <div class="stat-label">Admin Users</div>
                 </div>
                 <div class="stat-summary">
                     <div class="stat-number" id="managers">0</div>
-                    <div class="stat-label">Managers</div>
+                    <div class="stat-label">Offline Users</div>
                 </div>
             </div>
 
@@ -383,15 +382,18 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
                 <input type="text" class="filter-input" id="filterName" placeholder="Filter by name..." style="flex: 1; min-width: 200px;">
                 <select class="filter-select" id="filterRole" style="min-width: 150px;">
                     <option value="">All Roles</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="User">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="capital_master">Capital Master</option>
+                    <option value="finance_head">Finance Head</option>
+                    <option value="finance_manager">Finance Manager</option>
+                    <option value="cfo">CFO</option>
+                    <option value="md">MD</option>
+                    <option value="requester">Requester</option>
                 </select>
                 <select class="filter-select" id="filterStatus" style="min-width: 150px;">
-                    <option value="">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Pending">Pending</option>
+                    <option value="">All Sessions</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
                 </select>
                 <button class="btn-secondary" onclick="resetFilters()">
                     <i class="fa-solid fa-rotate-left"></i> Reset
@@ -408,10 +410,11 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Email</th>
+                            <th>Username</th>
                             <th>Role</th>
-                            <th>Status</th>
-                            <th>Joined Date</th>
+                            <th>Account</th>
+                            <th>Session</th>
+                            <th>Last Seen</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -444,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
                     </div>
                     <div class="form-group">
                         <label class="form-label">Phone</label>
-                        <input type="tel" id="userPhone" class="form-input" placeholder="+91 9876543210 or 9876543210" required>
+                        <input type="tel" id="userPhone" class="form-input" placeholder="+91 9876543210 or 9876543210">
                         <small style="color: var(--muted); margin-top: 4px; display: block;">Format: +91 XXXXXXXXXX or XXXXXXXXXX (10 digits)</small>
                         <div id="phoneError" style="color: var(--rose); font-size: 12px; margin-top: 4px; display: none;"></div>
                     </div>
@@ -452,18 +455,21 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
                         <label class="form-label">Role</label>
                         <select id="userRole" class="form-select" required>
                             <option value="">Select Role</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Manager">Manager</option>
-                            <option value="User">User</option>
+                            <option value="admin">Admin</option>
+                            <option value="capital_master">Capital Master</option>
+                            <option value="finance_head">Finance Head</option>
+                            <option value="finance_manager">Finance Manager</option>
+                            <option value="cfo">CFO</option>
+                            <option value="md">MD</option>
+                            <option value="requester">Requester</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Status</label>
                         <select id="userStatus" class="form-select" required>
                             <option value="">Select Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                            <option value="Pending">Pending</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
                         </select>
                     </div>
                     <div class="form-actions">
@@ -478,215 +484,137 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
 </div>
 
 <script>
-    // Local storage key - shared between admin and users pages
-    const STORAGE_KEY = 'BudgetMS_users';
     let users = [];
-    let editingIndex = -1;
+    let editingUserId = null;
 
-    // Load data from localStorage on page load
-    window.addEventListener('load', () => {
-        // Verify XLSX library is loaded
-        if (typeof XLSX === 'undefined') {
-            console.warn('XLSX library not loaded. Attempting to reinject script...');
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js';
-            script.async = true;
-            script.onload = () => {
-                console.log('XLSX library loaded successfully');
-            };
-            document.head.appendChild(script);
-        }
-        loadUsersData();
-        renderUsers();
-        updateStats();
-    });
-
-    // Load users from localStorage
-    function loadUsersData() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            users = JSON.parse(stored);
-        } else {
-            users = [];
-        }
+    function authToken() {
+        return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
     }
 
-    // Save users to localStorage
-    function saveUsersData() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    function authHeaders(extra) {
+        return Object.assign({
+            'Authorization': 'Bearer ' + authToken()
+        }, extra || {});
     }
 
-    // Render users table
+    function formatRole(role) {
+        const map = {
+            admin: 'Admin',
+            capital_master: 'Capital Master',
+            finance_head: 'Finance Head',
+            finance_manager: 'Finance Manager',
+            cfo: 'CFO',
+            md: 'MD',
+            requester: 'Requester'
+        };
+        return map[role] || role || '-';
+    }
+
+    function roleBadgeClass(role) {
+        if (role === 'admin') return 'role-admin';
+        if (role === 'requester') return 'role-user';
+        return 'role-manager';
+    }
+
+    function accountStatusClass(status) {
+        return String(status || '').toLowerCase() === 'active' ? 'status-active' : 'status-inactive';
+    }
+
+    function sessionStatusClass(sessionStatus) {
+        return sessionStatus === 'online' ? 'status-active' : 'status-inactive';
+    }
+
+    function formatDate(value) {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    async function loadUsersData() {
+        const response = await fetch('/api/users', { headers: authHeaders() });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to load users');
+        users = data.users || [];
+    }
+
     function renderUsers() {
         const tbody = document.getElementById('usersTableBody');
         const emptyState = document.getElementById('emptyState');
-        const filterName = document.getElementById('filterName').value.toLowerCase();
+        const filterName = document.getElementById('filterName').value.toLowerCase().trim();
         const filterRole = document.getElementById('filterRole').value;
         const filterStatus = document.getElementById('filterStatus').value;
 
-        let filtered = users.filter(user => {
-            const matchName = user.name.toLowerCase().includes(filterName);
-            const matchRole = filterRole === '' || user.role === filterRole;
-            const matchStatus = filterStatus === '' || user.status === filterStatus;
+        const filtered = users.filter(function(user) {
+            const haystack = [user.name, user.email, user.username, user.department].filter(Boolean).join(' ').toLowerCase();
+            const matchName = !filterName || haystack.includes(filterName);
+            const matchRole = !filterRole || user.role === filterRole;
+            const matchStatus = !filterStatus || user.sessionStatus === filterStatus;
             return matchName && matchRole && matchStatus;
         });
 
-        document.getElementById('userCount').textContent = `${filtered.length} user${filtered.length !== 1 ? 's' : ''}`;
+        document.getElementById('userCount').textContent = filtered.length + ' user' + (filtered.length === 1 ? '' : 's');
 
-        if (filtered.length === 0) {
+        if (!filtered.length) {
             tbody.innerHTML = '';
             emptyState.style.display = 'block';
             return;
         }
 
         emptyState.style.display = 'none';
-        tbody.innerHTML = filtered.map((user, index) => {
-            const statusClass = `status-${user.status.toLowerCase()}`;
-            const roleClass = `role-${user.role.toLowerCase()}`;
-            const avatar = user.name.split(' ').map(n => n[0]).join('');
-            return `
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="user-avatar-table">${avatar}</div>
-                            <div class="user-info-table">
-                                <div class="user-name-table">${user.name}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${user.email}</td>
-                    <td><span class="role-badge ${roleClass}">${user.role}</span></td>
-                    <td><span class="status-badge ${statusClass}">${user.status}</span></td>
-                    <td>${user.joinedDate}</td>
-                    <td>
-                        <button class="action-btn" onclick="editUser(${users.indexOf(user)})"><i class="fa-solid fa-pen"></i> Edit</button>
-                        <button class="action-btn delete" onclick="deleteUser(${users.indexOf(user)})"><i class="fa-solid fa-trash"></i> Delete</button>
-                    </td>
-                </tr>
-            `;
+        tbody.innerHTML = filtered.map(function(user) {
+            const avatar = (user.name || 'U').split(' ').map(function(part) { return part[0] || ''; }).join('').slice(0, 2).toUpperCase();
+            const disableDelete = String(user.id) === String((JSON.parse(localStorage.getItem('currentUser') || '{}') || {}).id);
+            return '<tr>' +
+                '<td><div class="user-cell"><div class="user-avatar-table">' + avatar + '</div><div class="user-info-table"><div class="user-name-table">' + (user.name || '-') + '</div><div class="user-email-table">' + (user.email || '-') + '</div></div></div></td>' +
+                '<td>' + (user.username || '-') + '</td>' +
+                '<td><span class="role-badge ' + roleBadgeClass(user.role) + '">' + formatRole(user.role) + '</span></td>' +
+                '<td><span class="status-badge ' + accountStatusClass(user.status) + '">' + (user.status || 'active') + '</span></td>' +
+                '<td><span class="status-badge ' + sessionStatusClass(user.sessionStatus) + '">' + (user.sessionStatus || 'offline') + '</span></td>' +
+                '<td>' + formatDate(user.lastSeenAt || user.lastLoginAt || user.joinedDate) + '</td>' +
+                '<td>' +
+                    '<button class="action-btn" onclick="editUser(' + user.id + ')"><i class="fa-solid fa-pen"></i> Edit</button> ' +
+                    '<button class="action-btn" onclick="forceLogoutUser(' + user.id + ', \'' + String(user.name || '').replace(/'/g, '&#39;') + '\')"><i class="fa-solid fa-right-from-bracket"></i> Logout</button> ' +
+                    '<button class="action-btn delete" ' + (disableDelete ? 'disabled style="opacity:.5;cursor:not-allowed;"' : 'onclick="deleteUser(' + user.id + ', \'' + String(user.name || '').replace(/'/g, '&#39;') + '\')"') + '><i class="fa-solid fa-trash"></i> Delete</button>' +
+                '</td>' +
+            '</tr>';
         }).join('');
     }
 
-    // Open add user modal
-    function openAddUserModal() {
-        editingIndex = -1;
-        document.getElementById('modalTitle').textContent = 'Add New User';
-        document.getElementById('userForm').reset();
-        document.getElementById('phoneError').style.display = 'none';
-        document.getElementById('userModal').classList.add('open');
-    }
-
-    // Open edit user modal
-    function editUser(index) {
-        editingIndex = index;
-        const user = users[index];
-        document.getElementById('modalTitle').textContent = 'Edit User';
-        document.getElementById('userName').value = user.name;
-        document.getElementById('userEmail').value = user.email;
-        document.getElementById('userPhone').value = user.phone;
-        document.getElementById('userRole').value = user.role;
-        document.getElementById('userStatus').value = user.status;
-        document.getElementById('phoneError').style.display = 'none';
-        document.getElementById('userModal').classList.add('open');
-    }
-
-    // Close user modal
-    function closeUserModal() {
-        document.getElementById('userModal').classList.remove('open');
-        editingIndex = -1;
-    }
-
-    // Validate phone number format
-    function validatePhoneNumber(phone) {
-        // Remove spaces for validation
-        const cleanPhone = phone.replace(/\s+/g, '');
-        
-        // Pattern: +91XXXXXXXXXX (12 digits with +91) or XXXXXXXXXX (10 digits)
-        const pattern = /^(\+91\d{10}|\d{10})$/;
-        
-        return pattern.test(cleanPhone);
-    }
-
-    // Handle save user
-    function handleSaveUser(event) {
-        event.preventDefault();
-        
-        const name = document.getElementById('userName').value;
-        const email = document.getElementById('userEmail').value;
-        const phone = document.getElementById('userPhone').value;
-        const role = document.getElementById('userRole').value;
-        const status = document.getElementById('userStatus').value;
-        
-        // Validate phone number
-        if (!validatePhoneNumber(phone)) {
-            const phoneError = document.getElementById('phoneError');
-            phoneError.textContent = '⚠️ Invalid format. Use +91 9876543210 or 9876543210';
-            phoneError.style.display = 'block';
-            return false;
-        } else {
-            document.getElementById('phoneError').style.display = 'none';
-        }
-
-        if (editingIndex === -1) {
-            // Add new user
-            const newUser = {
-                id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
-                name,
-                email,
-                phone,
-                role,
-                status,
-                joinedDate: new Date().toISOString().split('T')[0]
-            };
-            users.push(newUser);
-        } else {
-            // Update existing user
-            users[editingIndex] = { ...users[editingIndex], name, email, phone, role, status };
-        }
-
-        saveUsersData();
-        renderUsers();
-        updateStats();
-        closeUserModal();
-        alert('✓ User saved successfully');
-    }
-
-    // Delete user
-    function deleteUser(index) {
-        if (confirm(`Are you sure you want to delete ${users[index].name}?`)) {
-            users.splice(index, 1);
-            saveUsersData();
-            renderUsers();
-            updateStats();
-        }
-    }
-
-    // Update statistics
     function updateStats() {
         const total = users.length;
-        const active = users.filter(u => u.status === 'Active').length;
-        const inactive = users.filter(u => u.status !== 'Active').length;
-        const admins = users.filter(u => u.role === 'Admin').length;
-        const managers = users.filter(u => u.role === 'Manager').length;
-        
-        // Get pending approvals from records
-        const allRecords = JSON.parse(localStorage.getItem('capitalRecords') || '[]');
-        const pending = allRecords.filter(r => r.status === 'Pending').length;
+        const online = users.filter(function(user) { return user.sessionStatus === 'online'; }).length;
+        const offline = users.filter(function(user) { return user.sessionStatus !== 'online'; }).length;
+        const admins = users.filter(function(user) { return user.role === 'admin'; }).length;
+        const pending = JSON.parse(localStorage.getItem('capitalRecords') || '[]').filter(function(record) { return record.status === 'Pending'; }).length;
 
-        // Update old stat elements
         document.getElementById('totalUsers').textContent = total;
-        document.getElementById('activeUsers').textContent = active;
+        document.getElementById('activeUsers').textContent = online;
         document.getElementById('admins').textContent = admins;
-        document.getElementById('managers').textContent = managers;
-        
-        // Update new stat card elements
+        document.getElementById('managers').textContent = offline;
+
         document.getElementById('statTotalUsers').textContent = total;
-        document.getElementById('statActiveUsers').textContent = active;
-        document.getElementById('statInactiveUsers').textContent = inactive;
+        document.getElementById('statActiveUsers').textContent = online;
+        document.getElementById('statInactiveUsers').textContent = offline;
         document.getElementById('statPendingApprovals').textContent = pending;
     }
 
-    // Reset filters
+    async function refreshUsers() {
+        try {
+            await loadUsersData();
+            renderUsers();
+            updateStats();
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
     function resetFilters() {
         document.getElementById('filterName').value = '';
         document.getElementById('filterRole').value = '';
@@ -694,177 +622,173 @@ document.addEventListener('DOMContentLoaded', function updatePageDate() {
         renderUsers();
     }
 
-    // Event listeners for filters
+    function validatePhoneNumber(phone) {
+        const cleanPhone = String(phone || '').replace(/\s+/g, '');
+        return !cleanPhone || /^(\+91\d{10}|\d{10})$/.test(cleanPhone);
+    }
+
+    function editUser(userId) {
+        const user = users.find(function(entry) { return String(entry.id) === String(userId); });
+        if (!user) return;
+        editingUserId = user.id;
+        document.getElementById('modalTitle').textContent = 'Edit User';
+        document.getElementById('userName').value = user.name || '';
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userEmail').readOnly = true;
+        document.getElementById('userPhone').value = user.phone || '';
+        document.getElementById('userRole').value = user.role || '';
+        document.getElementById('userStatus').value = user.status || 'active';
+        document.getElementById('phoneError').style.display = 'none';
+        document.getElementById('userModal').classList.add('open');
+    }
+
+    function closeUserModal() {
+        document.getElementById('userModal').classList.remove('open');
+        document.getElementById('userEmail').readOnly = false;
+        editingUserId = null;
+    }
+
+    async function handleSaveUser(event) {
+        event.preventDefault();
+        if (!editingUserId) {
+            alert('Editing existing users only is enabled on this page.');
+            return;
+        }
+
+        const name = document.getElementById('userName').value.trim();
+        const phone = document.getElementById('userPhone').value.trim();
+        const role = document.getElementById('userRole').value;
+        const status = document.getElementById('userStatus').value;
+
+        if (!validatePhoneNumber(phone)) {
+            const phoneError = document.getElementById('phoneError');
+            phoneError.textContent = 'Invalid format. Use +91 9876543210 or 9876543210';
+            phoneError.style.display = 'block';
+            return;
+        }
+        document.getElementById('phoneError').style.display = 'none';
+
+        const response = await fetch('/api/users/' + editingUserId, {
+            method: 'PUT',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ name, phone, role, status })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            alert('Error: ' + (data.error || 'Unable to update user'));
+            return;
+        }
+
+        closeUserModal();
+        await refreshUsers();
+        alert('User updated successfully.');
+    }
+
+    async function deleteUser(userId, userName) {
+        if (!confirm('Are you sure you want to delete ' + userName + '?')) return;
+        const response = await fetch('/api/users/' + userId, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            alert('Error: ' + (data.error || 'Unable to delete user'));
+            return;
+        }
+        await refreshUsers();
+    }
+
+    async function forceLogoutUser(userId, userName) {
+        if (!confirm('Force logout for ' + userName + '?')) return;
+        const response = await fetch('/api/users/' + userId + '/force-logout', {
+            method: 'POST',
+            headers: authHeaders({ 'Content-Type': 'application/json' })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            alert('Error: ' + (data.error || 'Unable to logout user'));
+            return;
+        }
+        await refreshUsers();
+    }
+
+    function exportToExcel() {
+        if (typeof XLSX === 'undefined') {
+            alert('Export is not available right now.');
+            return;
+        }
+        const ws = XLSX.utils.json_to_sheet(users.map(function(user) {
+            return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                username: user.username,
+                role: formatRole(user.role),
+                account_status: user.status,
+                session_status: user.sessionStatus,
+                department: user.department || '',
+                joined_date: user.joinedDate || '',
+                last_seen: user.lastSeenAt || ''
+            };
+        }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Users');
+        XLSX.writeFile(wb, 'users_data.xlsx');
+    }
+
+    function loadUserInfo() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (!currentUser || String(currentUser.role || '').toLowerCase() !== 'admin') {
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        document.getElementById('topbarAvatar').textContent = (currentUser.name || 'A').charAt(0).toUpperCase();
+        document.getElementById('topbarName').textContent = currentUser.name || 'Admin';
+        document.getElementById('topbarEmail').textContent = currentUser.email || '';
+        document.getElementById('profileAvatar').textContent = (currentUser.name || 'A').charAt(0).toUpperCase();
+        document.getElementById('profileName').textContent = currentUser.name || 'Admin';
+        document.getElementById('profileEmail').textContent = currentUser.email || '';
+    }
+
+    function toggleProfile() {
+        document.getElementById('profileDropdown').classList.toggle('open');
+    }
+
+    async function logout() {
+        if (!confirm('Are you sure you want to logout?')) return;
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: authHeaders({ 'Content-Type': 'application/json' })
+            });
+        } catch (error) {
+            console.log('Logout API call failed:', error);
+        }
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+
     document.getElementById('filterName').addEventListener('input', renderUsers);
     document.getElementById('filterRole').addEventListener('change', renderUsers);
     document.getElementById('filterStatus').addEventListener('change', renderUsers);
 
-    // Export to Excel with retry logic
-    function exportToExcel() {
-        // Check if XLSX is available, if not wait and retry
-        if (typeof XLSX === 'undefined') {
-            console.log('XLSX not ready yet, waiting...');
-            setTimeout(() => {
-                if (typeof XLSX === 'undefined') {
-                    alert('Export failed: XLSX library could not be loaded. Please refresh and try again.');
-                    return;
-                }
-                performExport();
-            }, 1000);
-            return;
-        }
-        performExport();
-    }
-
-    function performExport() {
-        try {
-            // Filter out demo users before exporting
-            const realUsers = users.filter(u => !u.email.endsWith('@capital.com'));
-            if (realUsers.length === 0) {
-                alert('No real users to export.');
-                return;
-            }
-            
-            // Get current date and time
-            const now = new Date();
-            const exportDate = now.toLocaleDateString('en-IN'); // DD/MM/YYYY format for India
-            const exportTime = now.toLocaleTimeString('en-IN'); // HH:MM:SS format
-            
-            // Create workbook and add users data directly
-            const ws = XLSX.utils.json_to_sheet(realUsers);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Users');
-            
-            // Add export info below the data
-            const lastRow = realUsers.length + 2;
-            ws[`A${lastRow}`] = `Export Date: ${exportDate}`;
-            ws[`B${lastRow}`] = `Export Time: ${exportTime}`;
-            ws[`A${lastRow}`].s = { font: { bold: true, color: { rgb: '0066CC' } } };
-            ws[`B${lastRow}`].s = { font: { bold: true, color: { rgb: '0066CC' } } };
-            
-            // Adjust column widths
-            ws['!cols'] = [
-                { wch: 12 }, // id
-                { wch: 20 }, // name
-                { wch: 25 }, // email
-                { wch: 15 }, // phone
-                { wch: 12 }, // role
-                { wch: 12 }, // status
-                { wch: 12 }  // joinedDate
-            ];
-            
-            XLSX.writeFile(wb, `users_data_${exportDate.replace(/\//g, '-')}_${exportTime.replace(/:/g, '-')}.xlsx`);
-            alert(`✓ Exported to Excel successfully.\nExport Date: ${exportDate}\nExport Time: ${exportTime}`);
-        } catch (err) {
-            alert('Export failed: ' + err.message);
-        }
-    }
-
-    // Import from Excel
-    function importFromExcel(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-                // Validate and merge data (ignore demo users)
-                const importedUsers = jsonData
-                    .map((row, idx) => ({
-                        id: row.id || Math.max(...users.map(u => u.id), 0) + idx + 1,
-                        name: row.name || '',
-                        email: row.email || '',
-                        phone: row.phone || '',
-                        role: row.role || 'User',
-                        status: row.status || 'Active',
-                        joinedDate: row.joinedDate || new Date().toISOString().split('T')[0]
-                    }))
-                    .filter(u => u.name && u.email && !u.email.endsWith('@capital.com'));
-
-                if (importedUsers.length === 0) {
-                    alert('No valid users found in the file');
-                    return;
-                }
-
-                // Merge with existing users (update if email exists, add if new)
-                importedUsers.forEach(newUser => {
-                    const existingIndex = users.findIndex(u => u.email === newUser.email);
-                    if (existingIndex !== -1) {
-                        users[existingIndex] = newUser;
-                    } else {
-                        users.push(newUser);
-                    }
-                });
-
-                saveUsersData();
-                renderUsers();
-                updateStats();
-                alert(`Successfully imported ${importedUsers.length} user(s)`);
-            } catch (error) {
-                alert('Error reading file: ' + error.message);
-            }
-        };
-        reader.readAsArrayBuffer(file);
-        event.target.value = '';
-    }
-
-    // Close modal when clicking outside
-    document.getElementById('userModal').addEventListener('click', (e) => {
+    document.getElementById('userModal').addEventListener('click', function(e) {
         if (e.target.id === 'userModal') closeUserModal();
     });
 
-    // Load user info from localStorage and check role
-    function loadUserInfo() {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {
-            name: 'Admin',
-            email: 'admin@capital.com',
-            role: 'Admin'
-        };
-        
-        // Update topbar
-        document.getElementById('topbarAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
-        document.getElementById('topbarName').textContent = currentUser.name;
-        document.getElementById('topbarEmail').textContent = currentUser.email;
-        
-        // Update profile dropdown
-        document.getElementById('profileAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
-        document.getElementById('profileName').textContent = currentUser.name;
-        document.getElementById('profileEmail').textContent = currentUser.email;
-        
-        // Show/hide admin section based on role
-        const adminSection = document.getElementById('adminSection');
-        if (adminSection && currentUser.role !== 'Admin') {
-            adminSection.style.display = 'none';
-        }
-    }
+    document.addEventListener('DOMContentLoaded', async function() {
+        loadUserInfo();
+        await refreshUsers();
+        renderNotificationsAdmin();
+    });
 
-    // Profile dropdown toggle
-    function toggleProfile() {
-        const dropdown = document.getElementById('profileDropdown');
-        dropdown.classList.toggle('open');
-    }
-    
-    function logout() {
-        if (confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('currentUser');
-            window.location.href = 'login.html';
-        }
-    }
-    
-    // Load user info on page load
-    document.addEventListener('DOMContentLoaded', loadUserInfo);
-    document.addEventListener('DOMContentLoaded', renderNotificationsAdmin);
-
-    // Close profile dropdown when clicking outside
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', function(e) {
         const profileBtn = document.querySelector('.profile-btn');
         const dropdown = document.getElementById('profileDropdown');
-        if (!profileBtn.contains(e.target)) {
+        if (profileBtn && !profileBtn.contains(e.target)) {
             dropdown.classList.remove('open');
         }
     });
