@@ -933,7 +933,7 @@ function formatCurrencyInput(input) {
 }
 
 // Allocate Fund For Department
-function allocateFundForDepartment() {
+async function allocateFundForDepartment() {
     const department = document.getElementById('departmentSelect').value.trim();
     const fundAmount = parseFloat(document.getElementById('capitalFundInput').value.replace(/,/g, '')) || 0;
     
@@ -947,27 +947,27 @@ function allocateFundForDepartment() {
         return;
     }
     
-    // Get existing allocations
-    let capitalAllocations = JSON.parse(localStorage.getItem('capitalAllocations') || '{}');
-    
-    // Add or update allocation for this Department
-    if (capitalAllocations[department]) {
-        capitalAllocations[department].allocated += fundAmount;
-    } else {
-        capitalAllocations[department] = {
-            allocated: fundAmount,
-            used: 0
-        };
+    try {
+        const response = await fetch('/api/allocations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '')
+            },
+            body: JSON.stringify({ capitalType: department, allocatedAmount: fundAmount })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to allocate fund');
+
+        document.getElementById('departmentSelect').value = '';
+        document.getElementById('capitalFundInput').value = '';
+        localStorage.removeItem('capitalAllocations');
+        
+        alert('Fund allocated for ' + department);
+        await loadFundsAllocations();
+    } catch (error) {
+        alert('Error: ' + error.message);
     }
-    
-    localStorage.setItem('capitalAllocations', JSON.stringify(capitalAllocations));
-    
-    // Clear inputs
-    document.getElementById('departmentSelect').value = '';
-    document.getElementById('capitalFundInput').value = '';
-    
-    alert('✓ Fund allocated for ' + department);
-    loadFundsAllocations();
 }
 
 // Load Funds Allocations
@@ -1017,6 +1017,85 @@ function loadFundsAllocations() {
                 '<div style="background:var(--card);padding:8px;border-radius:6px;border:1px solid var(--border);"><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Allocated</div><div style="color:var(--text);font-weight:700;">₹' + (allocation.allocated || 0).toLocaleString() + '</div></div>' +
                 '<div style="background:var(--card);padding:8px;border-radius:6px;border:1px solid var(--border);"><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Used</div><div style="color:#ef4444;font-weight:700;">₹' + (allocation.used || 0).toLocaleString() + '</div></div>' +
                 '<div style="background:var(--card);padding:8px;border-radius:6px;border:1px solid var(--border);"><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Available</div><div style="color:' + statusColor + ';font-weight:700;">₹' + available.toLocaleString() + '</div></div>' +
+            '</div>' +
+            '<div style="background:var(--border);border-radius:6px;height:6px;overflow:hidden;">' +
+                '<div style="background:' + statusColor + ';height:100%;width:' + percentUsed + '%;transition:.3s;"></div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+async function migrateLocalAllocationsToBackend() {
+    const legacy = JSON.parse(localStorage.getItem('capitalAllocations') || '{}');
+    const departments = Object.keys(legacy);
+    if (!departments.length || localStorage.getItem('capitalAllocationsMigrated') === 'true') return;
+
+    for (const department of departments) {
+        const amount = Number(legacy[department] && legacy[department].allocated || 0);
+        if (amount <= 0) continue;
+        const response = await fetch('/api/allocations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '')
+            },
+            body: JSON.stringify({ capitalType: department, allocatedAmount: amount, remarks: 'Migrated from browser storage' })
+        });
+        if (!response.ok) throw new Error('Unable to migrate saved browser allocations');
+    }
+
+    localStorage.setItem('capitalAllocationsMigrated', 'true');
+}
+
+async function loadFundsAllocations() {
+    const container = document.getElementById('departmentAllocationsContainer');
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Loading allocations...</div>';
+
+    let allocations = [];
+    let summary = { totalAllocated: 0, totalUsed: 0, totalAvailable: 0 };
+
+    try {
+        await migrateLocalAllocationsToBackend();
+        const response = await fetch('/api/allocations', {
+            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '') }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to load allocations');
+        allocations = data.allocations || [];
+        summary = data.summary || summary;
+    } catch (error) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:#991b1b;font-size:13px;">Unable to load allocations: ' + escapeHtml(error.message) + '</div>';
+        return;
+    }
+
+    document.getElementById('totalAllocatedFunds').textContent = '₹' + Number(summary.totalAllocated || 0).toLocaleString('en-IN');
+    document.getElementById('totalUsedFunds').textContent = '₹' + Number(summary.totalUsed || 0).toLocaleString('en-IN');
+    document.getElementById('totalAvailableFunds').textContent = '₹' + Number(summary.totalAvailable || 0).toLocaleString('en-IN');
+
+    if (!allocations.length) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">No allocations yet.</div>';
+        return;
+    }
+
+    container.innerHTML = allocations.map(allocation => {
+        const type = allocation.capital_type || allocation.capitalType || '-';
+        const allocated = Number(allocation.allocated_amount || 0);
+        const used = Number(allocation.used_amount || 0);
+        const available = Number(allocation.available_amount ?? (allocated - used));
+        const percentUsed = allocated > 0 ? Math.min(100, Math.round((used / allocated) * 100)) : 0;
+        let statusColor = '#059669';
+        if (percentUsed > 80) statusColor = '#ef4444';
+        else if (percentUsed > 50) statusColor = '#f59e0b';
+
+        return '<div style="padding:14px;border-bottom:1px solid var(--border);">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
+                '<div style="font-weight:600;color:var(--navy);font-size:13px;">' + escapeHtml(type) + '</div>' +
+                '<div style="font-size:11px;background:#e0f2fe;color:#0369a1;padding:3px 8px;border-radius:4px;font-weight:600;">' + percentUsed + '% Used</div>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;font-size:12px;">' +
+                '<div style="background:var(--card);padding:8px;border-radius:6px;border:1px solid var(--border);"><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Allocated</div><div style="color:var(--text);font-weight:700;">₹' + allocated.toLocaleString('en-IN') + '</div></div>' +
+                '<div style="background:var(--card);padding:8px;border-radius:6px;border:1px solid var(--border);"><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Used</div><div style="color:#ef4444;font-weight:700;">₹' + used.toLocaleString('en-IN') + '</div></div>' +
+                '<div style="background:var(--card);padding:8px;border-radius:6px;border:1px solid var(--border);"><div style="color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:2px;">Available</div><div style="color:' + statusColor + ';font-weight:700;">₹' + available.toLocaleString('en-IN') + '</div></div>' +
             '</div>' +
             '<div style="background:var(--border);border-radius:6px;height:6px;overflow:hidden;">' +
                 '<div style="background:' + statusColor + ';height:100%;width:' + percentUsed + '%;transition:.3s;"></div>' +
@@ -1438,6 +1517,47 @@ function escapeHtml(value) {
 
 function detailRow(label, value) {
     return '<div style="display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--border);padding:7px 0;"><span style="color:var(--muted);font-weight:700;">' + label + '</span><span style="text-align:right;">' + escapeHtml(value || '-') + '</span></div>';
+}
+
+async function checkFundAvailabilityRealTime() {
+    const allocatedInput = document.getElementById('inlineApprovalAllocated');
+    const statusDiv = document.getElementById('fundAvailabilityStatus');
+    const requiredFund = Number(String(allocatedInput.value || '').replace(/,/g, ''));
+    if (!requiredFund || requiredFund <= 0 || !currentApprovalRequest) {
+        statusDiv.style.display = 'none';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/allocations', {
+            headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || localStorage.getItem('token') || '') }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to check funds');
+
+        const department = currentApprovalRequest.department || currentApprovalRequest.capitalType || '';
+        const allocation = (data.allocations || []).find(item => String(item.capital_type || '').toLowerCase() === String(department).toLowerCase());
+        const availableFund = Number(allocation ? allocation.available_amount : 0);
+        statusDiv.style.display = 'flex';
+
+        if (requiredFund <= availableFund) {
+            statusDiv.style.background = '#d1fae5';
+            statusDiv.style.color = '#065f46';
+            statusDiv.style.borderLeft = '3px solid #10b981';
+            statusDiv.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;font-size:14px;"></i> Sufficient Funds - Remaining: ₹' + (availableFund - requiredFund).toLocaleString('en-IN');
+        } else {
+            statusDiv.style.background = '#fee2e2';
+            statusDiv.style.color = '#7f1d1d';
+            statusDiv.style.borderLeft = '3px solid #ef4444';
+            statusDiv.innerHTML = '<i class="fa-solid fa-x" style="color:#ef4444;font-size:14px;"></i> Insufficient Funds - Need ₹' + (requiredFund - availableFund).toLocaleString('en-IN') + ' more';
+        }
+    } catch (error) {
+        statusDiv.style.display = 'flex';
+        statusDiv.style.background = '#fee2e2';
+        statusDiv.style.color = '#7f1d1d';
+        statusDiv.style.borderLeft = '3px solid #ef4444';
+        statusDiv.textContent = error.message;
+    }
 }
 
 function remarkBlock(label, value) {

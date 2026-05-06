@@ -1820,13 +1820,145 @@ document.addEventListener('click', function(event) {
     if (searchWrap && !searchWrap.contains(event.target)) closeSearchDropdown();
 });
 
-renderStats();
-renderNotifications();
-renderRecentTable();
-renderAssetTable();
-renderFundBars();
-renderActivity();
-renderTypeBreakdown();
+let dashboardAllocations = [];
+let dashboardDataLoaded = false;
+
+async function loadDashboardData() {
+    try {
+        const token = dashboardAuthToken();
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const responses = await Promise.all([
+            fetch('/api/assets', { headers }),
+            fetch('/api/allocations', { headers })
+        ]);
+        const assetData = await responses[0].json();
+        const allocationData = await responses[1].json();
+        dashboardAssetRecords = assetData.success ? (assetData.assets || []) : [];
+        dashboardAllocations = allocationData.success ? (allocationData.allocations || []) : [];
+        dashboardDataLoaded = true;
+    } catch (error) {
+        console.log('Could not load dashboard API data:', error);
+        dashboardAssetRecords = JSON.parse(localStorage.getItem('assetRecords') || '[]');
+        dashboardAllocations = [];
+        dashboardDataLoaded = true;
+    }
+    return { assets: dashboardAssetRecords, allocations: dashboardAllocations };
+}
+
+function visiblePendingCapitalMasterCount() {
+    return dashboardAssetRecords.filter(function(r) {
+        return r.status === 'pending_capital_master' || r.status === 'pending' || r.statusLabel === 'Pending Capital Master';
+    }).length;
+}
+
+async function renderStats() {
+    if (!dashboardDataLoaded) await loadDashboardData();
+    const totalAssets = dashboardAssetRecords.length;
+    document.getElementById('statTotal').textContent = totalAssets;
+    document.getElementById('statAsset').textContent = totalAssets;
+    document.getElementById('assetCount').textContent = totalAssets || '';
+    const capBadge = document.getElementById('capCount');
+    if (capBadge) capBadge.textContent = visiblePendingCapitalMasterCount() || '';
+}
+
+async function renderRecentTable() {
+    if (!dashboardDataLoaded) await loadDashboardData();
+    const tbody = document.getElementById('recentTableBody');
+    if (!tbody) return;
+    const recent = dashboardAssetRecords.slice(0, 6);
+    if (!recent.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No recent requests yet.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = recent.map(function(r) {
+        return '<tr><td>' + escapeHtml(r.ticketId || r.requestId || '-') + '</td><td><span class="badge badge-asset">Request</span></td><td>' + escapeHtml(r.itemName || r.assetName || r.department || '-') + '</td><td>' + dashboardStatusBadge(r) + '</td><td>' + escapeHtml(r.requestDate || '-') + '</td></tr>';
+    }).join('');
+}
+
+async function renderAssetTable() {
+    if (!dashboardDataLoaded) await loadDashboardData();
+    const tbody = document.getElementById('assetTableBody');
+    const table = tbody.closest('table');
+    table.querySelector('thead tr').innerHTML = '<th>#</th><th>Request ID</th><th>Item Name</th><th>Quantity</th><th style="text-align:center;">Department</th><th>Requester Remarks</th><th>Request Date</th><th style="text-align:left;">Status</th><th style="text-align:center;">Actions</th>';
+    if (!dashboardAssetRecords.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No capital requests yet. <a href="asset.html">Submit one</a></td></tr>';
+        return;
+    }
+    renderDashboardAssetRows(dashboardAssetRecords, 'No capital requests yet.');
+}
+
+async function renderFundBars() {
+    if (!dashboardDataLoaded) await loadDashboardData();
+    const wrap = document.getElementById('fundBars');
+    if (!wrap) return;
+    if (!dashboardAllocations.length) {
+        wrap.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No fund allocations yet.</div>';
+        return;
+    }
+    const colors = ['#3b82f6','#10b981','#f59e0b','#f43f5e','#8b5cf6','#06b6d4'];
+    wrap.innerHTML = dashboardAllocations.slice(0, 6).map(function(r, i) {
+        const allocated = Number(r.allocated_amount || 0);
+        const used = Number(r.used_amount || 0);
+        const pct = allocated > 0 ? Math.min(100, Math.round((used / allocated) * 100)) : 0;
+        const color = colors[i % colors.length];
+        return '<div class="fund-row"><div class="fund-row-top"><div class="fund-name">' + escapeHtml(r.capital_type || 'Fund') + '</div><div class="fund-val">' + pct + '% used</div></div><div class="fund-bar-bg"><div class="fund-bar-fill" style="width:0%;background:' + color + ';" data-pct="' + pct + '"></div></div></div>';
+    }).join('');
+    setTimeout(function() {
+        document.querySelectorAll('.fund-bar-fill').forEach(function(b) { b.style.width = b.dataset.pct + '%'; });
+    }, 100);
+}
+
+async function renderActivity() {
+    if (!dashboardDataLoaded) await loadDashboardData();
+    const feed = document.getElementById('activityFeed');
+    if (!feed) return;
+    if (!dashboardAssetRecords.length) {
+        feed.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No activity yet.</div>';
+        return;
+    }
+    feed.innerHTML = dashboardAssetRecords.slice(0, 5).map(function(r) {
+        return '<div class="activity-item"><div class="act-dot" style="background:#d1fae5;color:#059669;"><i class="fa-solid fa-boxes-stacked"></i></div><div class="act-info"><div class="act-title">Capital request: ' + escapeHtml(r.ticketId || r.requestId || '-') + '</div><div class="act-sub">' + escapeHtml(r.itemName || r.assetName || r.requesterName || '-') + '</div></div><div class="act-time">' + escapeHtml(r.requestDate || '-') + '</div></div>';
+    }).join('');
+}
+
+async function renderTypeBreakdown() {
+    if (!dashboardDataLoaded) await loadDashboardData();
+    const wrap = document.getElementById('typeBreakdown');
+    if (!wrap) return;
+    if (!dashboardAssetRecords.length) {
+        wrap.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px;">No data yet.</div>';
+        return;
+    }
+    const counts = {};
+    dashboardAssetRecords.forEach(function(r) {
+        const type = r.department || 'Unknown';
+        counts[type] = (counts[type] || 0) + 1;
+    });
+    const total = dashboardAssetRecords.length;
+    const colors = ['#3b82f6','#10b981','#f59e0b','#f43f5e','#8b5cf6','#06b6d4','#ec4899'];
+    wrap.innerHTML = Object.keys(counts).map(function(type, i) {
+        const count = counts[type];
+        const pct = Math.round((count / total) * 100);
+        return '<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;margin-bottom:5px;"><div style="font-size:12px;font-weight:600;color:var(--text);">' + escapeHtml(type) + '</div><div style="font-size:12px;color:var(--muted);">' + count + ' (' + pct + '%)</div></div><div class="fund-bar-bg"><div class="fund-bar-fill" style="width:0%;background:' + colors[i % colors.length] + ';" data-pct="' + pct + '"></div></div></div>';
+    }).join('');
+    setTimeout(function() {
+        document.querySelectorAll('.fund-bar-fill').forEach(function(b) { b.style.width = b.dataset.pct + '%'; });
+    }, 100);
+}
+
+async function initializeDashboard() {
+    dashboardDataLoaded = false;
+    await loadDashboardData();
+    await renderStats();
+    await renderNotifications();
+    await renderRecentTable();
+    await renderAssetTable();
+    await renderFundBars();
+    await renderActivity();
+    await renderTypeBreakdown();
+}
+
+initializeDashboard();
 </script>
 <script src="clear-tables.js"></script>
 </body>

@@ -40,6 +40,9 @@
                 try { window[name](); } catch (error) { console.warn('Refresh skipped:', name, error); }
             }
         });
+        if (typeof window.initializeDashboard === 'function') {
+            try { window.initializeDashboard(); } catch (error) { console.warn('Dashboard refresh skipped:', error); }
+        }
     }
 
     async function clearTable(tbodyId) {

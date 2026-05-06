@@ -43,11 +43,7 @@ function initDataFiles() {
   }
 
   if (!fs.existsSync(ALLOCATIONS_FILE)) {
-    const types = ['Plant and Machinery', 'Building', 'Vehicles', 'Computer and Electronics', 'Furniture and Fixtures', 'Equipment'];
-    const allocations = types.map((type, i) => ({
-      id: i + 1, capital_type: type, allocated_amount: 500000, used_amount: 0, available_amount: 500000, remarks: 'Initial allocation'
-    }));
-    fs.writeFileSync(ALLOCATIONS_FILE, JSON.stringify(allocations, null, 2));
+    fs.writeFileSync(ALLOCATIONS_FILE, JSON.stringify([], null, 2));
   }
 
   if (!fs.existsSync(ASSETS_FILE)) fs.writeFileSync(ASSETS_FILE, JSON.stringify([], null, 2));
@@ -218,11 +214,25 @@ function findAssetIndex(assets, id) {
   return assets.findIndex(a => String(a.id) === String(id) || String(a.ticket_id) === String(id) || String(a.object_id) === String(id));
 }
 
+function getNextRequesterAssetSequence(assets, userId) {
+  const requesterAssets = assets.filter(asset => String(asset.user_id) === String(userId));
+  const numbers = requesterAssets.map(asset => {
+    if (Number(asset.request_sequence) > 0) return Number(asset.request_sequence);
+    const match = String(asset.ticket_id || asset.object_id || '').match(/-(\d{4})$/);
+    return match ? Number(match[1]) : 0;
+  });
+  return Math.max(0, ...numbers) + 1;
+}
+
 function normalizeAsset(asset) {
   const users = readFile(USERS_FILE);
   const requester = users.find(u => u.id == asset.user_id);
   const amount = Number(asset.amount ?? asset.asset_value ?? asset.assetValue ?? 0);
   const quantity = Number(asset.quantity ?? asset.qty ?? 1);
+  const allocation = findAllocationForDepartment(asset.department || asset.capital_type);
+  const departmentAllocatedFund = Number(allocation ? allocation.allocated_amount : 0);
+  const requiredFund = Number(asset.allocated_fund ?? asset.allocatedFund ?? amount);
+  const remainingFund = Number(allocation ? allocation.available_amount : 0);
 
   return {
     ...asset,
@@ -232,6 +242,7 @@ function normalizeAsset(asset) {
     ticketId: asset.ticket_id,
     ticket_id: asset.ticket_id,
     requestId: asset.ticket_id || asset.requestId || asset.id,
+    requestSequence: asset.request_sequence,
     assetName: asset.asset_name || asset.item_name || asset.assetName,
     itemName: asset.item_name || asset.asset_name || asset.assetName,
     assetValue: amount,
@@ -247,7 +258,10 @@ function normalizeAsset(asset) {
     requestedOn: asset.requested_on,
     requestDate: asset.request_date || (asset.requested_on ? asset.requested_on.slice(0, 10) : ''),
     requestTo: workflowSteps[asset.status] || 'Closed',
-    allocatedFund: Number(asset.allocated_fund ?? asset.allocatedFund ?? amount),
+    allocatedFund: requiredFund,
+    requiredFund,
+    departmentAllocatedFund,
+    remainingFund,
     capitalMasterRemarks: asset.capital_master_remarks || '',
     financeManagerRemarks: asset.finance_manager_remarks || '',
     cfoRemarks: asset.cfo_remarks || '',
@@ -339,6 +353,50 @@ function createWorkflowNotification(asset, options) {
   writeFile(NOTIFICATIONS_FILE, notifications);
 }
 
+function getAllocationUsageByDepartment() {
+  const openStatuses = ['approved_by_capital_master', 'approved_by_finance_manager', 'approved_by_cfo', 'approved_by_md'];
+  return readFile(ASSETS_FILE).reduce((usage, asset) => {
+    if (!openStatuses.includes(asset.status)) return usage;
+    const department = asset.department || asset.capital_type || 'General';
+    const amount = Number(asset.allocated_fund ?? asset.allocatedFund ?? asset.amount ?? asset.asset_value ?? 0);
+    usage[department] = (usage[department] || 0) + amount;
+    return usage;
+  }, {});
+}
+
+function getComputedAllocations() {
+  const usage = getAllocationUsageByDepartment();
+  const allocations = readFile(ALLOCATIONS_FILE).map(allocation => {
+    const allocatedAmount = Number(allocation.allocated_amount || 0);
+    const usedAmount = Number(usage[allocation.capital_type] || 0);
+    return {
+      ...allocation,
+      allocated_amount: allocatedAmount,
+      used_amount: usedAmount,
+      available_amount: allocatedAmount - usedAmount
+    };
+  });
+
+  Object.keys(usage).forEach(department => {
+    if (!allocations.some(allocation => allocation.capital_type === department)) {
+      allocations.push({
+        id: getNextId(allocations),
+        capital_type: department,
+        allocated_amount: 0,
+        used_amount: usage[department],
+        available_amount: -usage[department],
+        remarks: ''
+      });
+    }
+  });
+
+  return allocations;
+}
+
+function findAllocationForDepartment(department) {
+  return getComputedAllocations().find(allocation => String(allocation.capital_type || '').toLowerCase() === String(department || '').toLowerCase());
+}
+
 function updateTicket(req, res, options) {
   try {
     if (!canAct(req.user.role, options.roles)) return res.status(403).json({ error: 'Unauthorized' });
@@ -366,6 +424,11 @@ function updateTicket(req, res, options) {
       if (options.allocation) {
         const allocatedFund = Number(req.body.allocatedFund || req.body.allocated_fund || 0);
         if (allocatedFund <= 0) return res.status(400).json({ error: 'Required fund is required' });
+        const allocation = findAllocationForDepartment(asset.department || asset.capital_type);
+        const availableFund = Number(allocation ? allocation.available_amount : 0);
+        if (availableFund < allocatedFund) {
+          return res.status(400).json({ error: `Insufficient funds for ${asset.department || asset.capital_type || 'department'}. Available: ${availableFund}` });
+        }
         asset.allocated_fund = allocatedFund;
         asset.amount = allocatedFund;
         asset.asset_value = allocatedFund;
@@ -434,11 +497,15 @@ app.post('/api/assets', authMiddleware, (req, res) => {
 
     let assets = readFile(ASSETS_FILE);
     const id = getNextId(assets);
+    const requestSequence = getNextRequesterAssetSequence(assets, req.user.id);
     const todayKey = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const userKey = `U${String(req.user.id).padStart(4, '0')}`;
+    const sequenceKey = String(requestSequence).padStart(4, '0');
     const asset = {
       id,
-      object_id: `OBJ-${todayKey}-${String(id).padStart(4, '0')}`,
-      ticket_id: `TKT-${todayKey}-${String(id).padStart(4, '0')}`,
+      object_id: `OBJ-${todayKey}-${userKey}-${sequenceKey}`,
+      ticket_id: `TKT-${todayKey}-${userKey}-${sequenceKey}`,
+      request_sequence: requestSequence,
       user_id: req.user.id,
       item_name: itemName,
       asset_name: itemName,
@@ -613,11 +680,11 @@ app.post('/api/assets/:id/deny-md', authMiddleware, (req, res) => updateTicket(r
 // Allocations routes
 app.get('/api/allocations', authMiddleware, (req, res) => {
   try {
-    const allocations = readFile(ALLOCATIONS_FILE);
+    const allocations = getComputedAllocations();
     const summary = {
-      totalAllocated: allocations.reduce((sum, a) => sum + a.allocated_amount, 0),
-      totalUsed: allocations.reduce((sum, a) => sum + a.used_amount, 0),
-      totalAvailable: allocations.reduce((sum, a) => sum + a.available_amount, 0)
+      totalAllocated: allocations.reduce((sum, a) => sum + Number(a.allocated_amount || 0), 0),
+      totalUsed: allocations.reduce((sum, a) => sum + Number(a.used_amount || 0), 0),
+      totalAvailable: allocations.reduce((sum, a) => sum + Number(a.available_amount || 0), 0)
     };
     res.json({ success: true, allocations, summary });
   } catch (error) { res.status(500).json({ error: error.message }); }
@@ -626,18 +693,25 @@ app.get('/api/allocations', authMiddleware, (req, res) => {
 app.post('/api/allocations', authMiddleware, (req, res) => {
   try {
     if (req.user.role !== 'admin' && req.user.role !== 'capital_master') return res.status(403).json({ error: 'Unauthorized' });
-    const { capitalType, allocatedAmount, remarks } = req.body;
+    const capitalType = (req.body.capitalType || req.body.capital_type || '').trim();
+    const allocatedAmount = Number(req.body.allocatedAmount || req.body.allocated_amount || 0);
+    const { remarks } = req.body;
+    if (!capitalType || allocatedAmount <= 0) return res.status(400).json({ error: 'Department and allocation amount are required' });
+
     let allocations = readFile(ALLOCATIONS_FILE);
     let allocation = allocations.find(a => a.capital_type === capitalType);
     if (allocation) {
-      allocation.allocated_amount = allocatedAmount;
-      allocation.available_amount = allocatedAmount - (allocation.used_amount || 0);
+      allocation.allocated_amount = Number(allocation.allocated_amount || 0) + allocatedAmount;
+      allocation.remarks = remarks || allocation.remarks || '';
     } else {
-      allocation = { id: getNextId(allocations), capital_type: capitalType, allocated_amount: allocatedAmount, used_amount: 0, available_amount: allocatedAmount, remarks };
+      allocation = { id: getNextId(allocations), capital_type: capitalType, allocated_amount: allocatedAmount, used_amount: 0, available_amount: allocatedAmount, remarks: remarks || '' };
       allocations.push(allocation);
     }
+    const usage = getAllocationUsageByDepartment();
+    allocation.used_amount = Number(usage[capitalType] || 0);
+    allocation.available_amount = Number(allocation.allocated_amount || 0) - allocation.used_amount;
     writeFile(ALLOCATIONS_FILE, allocations);
-    res.json({ success: true, message: 'Allocation saved' });
+    res.json({ success: true, message: 'Allocation saved', allocation });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
