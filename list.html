@@ -136,21 +136,30 @@
                 </div>
             </div>
         </div>
-        <div style="background:var(--card);border:2px solid #10b981;border-radius:16px;padding:22px;box-shadow:0 8px 20px rgba(16,185,129,0.15);transition:.3s;cursor:default;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(16,185,129,0.25)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 20px rgba(16,185,129,0.15)';">
-            <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
-                <div style="width:50px;height:50px;border-radius:12px;background:#10b981;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;"><i class="fa-solid fa-box"></i></div>
-                <div style="flex:1;">
-                    <div style="font-size:28px;font-weight:800;color:#10b981;line-height:1;" id="assetRecordCount">0</div>
-                    <div style="font-size:12px;color:var(--muted);margin-top:2px;font-weight:600;">Capital Records</div>
-                </div>
-            </div>
-        </div>
         <div style="background:var(--card);border:2px solid #059669;border-radius:16px;padding:22px;box-shadow:0 8px 20px rgba(5,150,105,0.15);transition:.3s;cursor:default;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(5,150,105,0.25)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 20px rgba(5,150,105,0.15)';">
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
                 <div style="width:50px;height:50px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;"><i class="fa-solid fa-circle-check"></i></div>
                 <div style="flex:1;">
-                    <div style="font-size:28px;font-weight:800;color:#059669;line-height:1;" id="activeRecords">0</div>
-                    <div style="font-size:12px;color:var(--muted);margin-top:2px;font-weight:600;">Approved Records</div>
+                    <div style="font-size:28px;font-weight:800;color:#059669;line-height:1;" id="approvedRecords">0</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:2px;font-weight:600;">Approved Requests</div>
+                </div>
+            </div>
+        </div>
+        <div style="background:var(--card);border:2px solid #f59e0b;border-radius:16px;padding:22px;box-shadow:0 8px 20px rgba(245,158,11,0.15);transition:.3s;cursor:default;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(245,158,11,0.25)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 20px rgba(245,158,11,0.15)';">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                <div style="width:50px;height:50px;border-radius:12px;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div style="flex:1;">
+                    <div style="font-size:28px;font-weight:800;color:#f59e0b;line-height:1;" id="pendingRecords">0</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:2px;font-weight:600;">Pending Requests</div>
+                </div>
+            </div>
+        </div>
+        <div style="background:var(--card);border:2px solid #ef4444;border-radius:16px;padding:22px;box-shadow:0 8px 20px rgba(239,68,68,0.15);transition:.3s;cursor:default;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(239,68,68,0.25)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 8px 20px rgba(239,68,68,0.15)';">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+                <div style="width:50px;height:50px;border-radius:12px;background:#ef4444;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;"><i class="fa-solid fa-circle-xmark"></i></div>
+                <div style="flex:1;">
+                    <div style="font-size:28px;font-weight:800;color:#ef4444;line-height:1;" id="deniedRecords">0</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:2px;font-weight:600;">Denied Requests</div>
                 </div>
             </div>
         </div>
@@ -166,30 +175,14 @@
                 </div>
                 <div style="display:flex;gap:8px;">
                     <button class="tab-btn" onclick="filterRecords('all')" style="padding:6px 14px;border:1.5px solid #052377;background:#052377;color:white;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabAll">All</button>
-                    <button class="tab-btn" onclick="filterRecords('asset')" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabAsset">Requests</button>
                     <button class="tab-btn" onclick="filterRecords('pending')" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabPending">Pending</button>
+                    <button class="tab-btn" onclick="filterRecords('approved')" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabApproved">Approved</button>
+                    <button class="tab-btn" onclick="filterRecords('denied')" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabDenied">Denied</button>
                 </div>
             </div>
             <button class="sc-link" onclick="exportTableToCSV()" style="background:#059669;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#047857';" onmouseout="this.style.background='#059669';">
                 <i class="fa-solid fa-download" style="margin-right:6px;"></i>Export CSV
             </button>
-        </div>
-        <div id="filterControls" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-            <select id="typeFilter" onchange="renderRecordsTable()" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;cursor:pointer;transition:.2s;background:var(--card);color:var(--text);" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';">
-                <option value="">All Types</option>
-                <option>Asset</option>
-                <option>Licenses</option>
-                <option>Stationary</option>
-                <option>Tools and Instruments</option>
-                <option>Electrical Equipment</option>
-                <option>Plant and Machinery</option>
-            </select>
-            <select id="statusFilter" onchange="renderRecordsTable()" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;cursor:pointer;transition:.2s;background:var(--card);color:var(--text);" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';">
-                <option value="">All Status</option>
-                <option>Approved</option>
-                <option>Denied</option>
-                <option>Pending</option>
-            </select>
         </div>
         <div id="fundsSection" style="display:none;margin-bottom:40px;">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
@@ -232,20 +225,18 @@
                         <th>#</th>
                         <th>ID</th>
                         <th>Department</th>
-                        <th>Details</th>
+                        <th>Item Name</th>
                         <th>Date</th>
                         <th>Quantity</th>
                         <th>Available Fund</th>
                         <th>Required Fund</th>
                         <th>Remaining Fund</th>
                         <th>Status</th>
-                        <th>Requester Remark</th>
-                        <th>Capital Master Remarks</th>
                         <th style="text-align:center;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="recordsTableBody">
-                    <tr class="empty-row"><td colspan="12"><i class="fa-solid fa-inbox" style="margin-right:8px;"></i>No records found.</td></tr>
+                    <tr class="empty-row"><td colspan="11"><i class="fa-solid fa-inbox" style="margin-right:8px;"></i>No records found.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -295,6 +286,36 @@
     </div>
 </div>
 
+<!-- RECORD INFO MODAL -->
+<div class="modal-overlay" id="recordInfoModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <div class="modal-head-icon"><i class="fa-solid fa-circle-info"></i></div>
+            <div><h3>Request Information</h3><p>Full request details and remarks</p></div>
+        </div>
+        <div class="modal-body">
+            <div class="modal-info-row"><div class="modal-info-label">Request ID</div><div id="recordInfoId" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Department</div><div id="recordInfoDepartment" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Item Name</div><div id="recordInfoItem" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Date</div><div id="recordInfoDate" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Quantity</div><div id="recordInfoQty" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Available Fund</div><div id="recordInfoAvailable" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Required Fund</div><div id="recordInfoRequired" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Remaining Fund</div><div id="recordInfoRemaining" class="modal-info-val">-</div></div>
+            <div class="modal-info-row"><div class="modal-info-label">Status</div><div id="recordInfoStatus" class="modal-info-val">-</div></div>
+            <div style="margin-top:18px;">
+                <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">REQUESTER REMARK</div>
+                <div id="recordInfoRequesterRemark" style="padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-size:13px;color:var(--text);">—</div>
+            </div>
+            <div style="margin-top:14px;">
+                <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">CAPITAL MASTER REMARK</div>
+                <div id="recordInfoCapitalRemark" style="padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-size:13px;color:var(--text);">—</div>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn-primary" onclick="closeModal('recordInfoModal')">Close</button></div>
+    </div>
+</div>
+
 <script>
 // Page initialization
 const today = new Date();
@@ -304,6 +325,7 @@ document.getElementById('pageDay').textContent = monthYear;
 
 let currentFilter = 'all';
 let recordsCache = [];
+let displayedRecords = [];
 
 function recordsAuthToken() {
     return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
@@ -315,21 +337,45 @@ function escapeHtml(value) {
     });
 }
 
+function formatMoney(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount <= 0) return '—';
+    return '₹' + amount.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
 function mapAssetRecord(asset) {
     return {
         source: 'asset',
         _id: String(asset.id || asset.requestId || asset.ticketId || ''),
+        id: asset.id || '',
         requestId: asset.ticketId || asset.requestId || asset.ticket_id || asset.id,
+        objectId: asset.objectId || asset.object_id || '',
         department: asset.department || asset.capitalType || '',
         details: asset.itemName || asset.assetName || asset.asset_name || '',
         requesterName: asset.requesterName || asset.userName || '',
+        requesterEmail: asset.requesterEmail || '',
+        requestTo: asset.requestTo || '',
         qty: asset.quantity || asset.qty || 0,
         requestDate: asset.requestDate || asset.request_date || '',
+        allowedAmount: asset.allowedAmount || asset.departmentAllocatedFund || 0,
+        departmentAllocatedFund: asset.departmentAllocatedFund || asset.allowedAmount || 0,
+        requiredFund: asset.requiredFund || asset.allocatedFund || asset.allocated_fund || asset.amount || 0,
+        remainingFund: asset.remainingFund || 0,
         allocatedFund: asset.allocatedFund || asset.allocated_fund || asset.amount || 0,
+        amount: asset.amount || asset.assetValue || 0,
+        assetValue: asset.assetValue || asset.amount || 0,
         status: asset.statusLabel || asset.status || 'Pending',
+        statusLabel: asset.statusLabel || asset.status || 'Pending',
         rawStatus: asset.status || '',
         remarks: asset.remarks || '',
-        capitalMasterRemarks: asset.capitalMasterRemarks || ''
+        capitalMasterRemarks: asset.capitalMasterRemarks || '',
+        denialReason: asset.denialReason || '',
+        financeManagerRemarks: asset.financeManagerRemarks || '',
+        financeManagerDenialReason: asset.financeManagerDenialReason || '',
+        cfoRemarks: asset.cfoRemarks || '',
+        cfoDenialReason: asset.cfoDenialReason || '',
+        mdRemarks: asset.mdRemarks || '',
+        mdDenialReason: asset.mdDenialReason || ''
     };
 }
 
@@ -369,12 +415,23 @@ function getAllRecords() {
 // Update summary
 function updateSummary() {
     const all = getAllRecords();
-    const assets = all.filter(r => r.source === 'asset');
-    const active = all.filter(r => r.status === 'Approved');
+    const approved = all.filter(r => {
+        const status = String(r.rawStatus || r.status || '').toLowerCase();
+        return status === 'approved_by_md' || status === 'approved';
+    });
+    const denied = all.filter(r => {
+        const status = String(r.rawStatus || r.status || '').toLowerCase();
+        return status.startsWith('denied_by_') || status.includes('denied');
+    });
+    const pending = all.filter(r => {
+        const status = String(r.rawStatus || r.status || '').toLowerCase();
+        return status.includes('pending') || status.includes('awaiting') || ['approved_by_capital_master', 'approved_by_finance_manager', 'approved_by_cfo'].includes(status);
+    });
     
     document.getElementById('totalRecords').textContent = all.length;
-    document.getElementById('assetRecordCount').textContent = assets.length;
-    document.getElementById('activeRecords').textContent = active.length;
+    document.getElementById('approvedRecords').textContent = approved.length;
+    document.getElementById('pendingRecords').textContent = pending.length;
+    document.getElementById('deniedRecords').textContent = denied.length;
 }
 
 // Filter records
@@ -398,44 +455,30 @@ function filterRecords(type) {
 function renderRecordsTable() {
     let records = getAllRecords();
     
-    // Filter by type, status, or department
     if (currentFilter === 'pending') {
         records = records.filter(r => {
             const status = String(r.rawStatus || r.status || '').toLowerCase();
-            return status.includes('pending') || status.includes('awaiting') || status.startsWith('approved_by_');
+            return status.includes('pending') || status.includes('awaiting') || ['approved_by_capital_master', 'approved_by_finance_manager', 'approved_by_cfo'].includes(status);
         });
-    } else if (currentFilter === 'status') {
-        // Show only records with a type/department
-        records = records.filter(r => r.department || r.type);
-    } else if (currentFilter !== 'all') {
-        records = records.filter(r => r.source === currentFilter);
-    }
-    
-    // Filter by department
-    const typeF = document.getElementById('typeFilter').value;
-    if (typeF) {
-        records = records.filter(r => (r.department || '').toLowerCase().includes(typeF.toLowerCase()));
-    }
-    
-    // Filter by status
-    const statusF = document.getElementById('statusFilter').value;
-    if (statusF) {
-        const target = statusF.toLowerCase();
+    } else if (currentFilter === 'approved' || currentFilter === 'denied') {
+        const target = currentFilter;
         records = records.filter(r => {
             const status = String(r.rawStatus || r.status || '').toLowerCase();
             if (target === 'approved') return status === 'approved_by_md' || String(r.status || '').toLowerCase().includes('approved');
             if (target === 'denied') return status.startsWith('denied_by_') || String(r.status || '').toLowerCase().includes('denied');
-            if (target === 'pending') return status.includes('pending') || status.includes('awaiting') || status.startsWith('approved_by_');
-            return String(r.status || '') === statusF;
+            return true;
         });
     }
     
     const tbody = document.getElementById('recordsTableBody');
     if (records.length === 0) {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="13"><i class="fa-solid fa-inbox" style="margin-right:8px;"></i>No records found. <a href="asset.html">Add a record →</a></td></tr>';
+        displayedRecords = [];
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="11"><i class="fa-solid fa-inbox" style="margin-right:8px;"></i>No records found. <a href="asset.html">Add a record ?</a></td></tr>';
+        return;
     }
     
-    tbody.innerHTML = records.slice().reverse().map((r, i) => {
+    displayedRecords = records.slice().reverse();
+    tbody.innerHTML = displayedRecords.map((r, i) => {
         // Status column value (type/category)
         let statusValue = '';
         if (r.department) {
@@ -473,33 +516,18 @@ function renderRecordsTable() {
             details = r.department || '—';
             quantity = '—';
             date = r.financialYear || '—';
-            allocated = r.allocated ? '₹' + Number(r.allocated).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
-            used = r.used ? '₹' + Number(r.used).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '₹0';
+            allocated = formatMoney(r.allocated);
+            used = formatMoney(r.used);
             const pendingAmount = (parseFloat(r.allocated) || 0) - (parseFloat(r.used) || 0);
-            pending = pendingAmount > 0 ? '₹' + pendingAmount.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '₹0';
+            pending = formatMoney(pendingAmount);
         } else {
             details = r.details || r.requesterName || '—';
             const requestQuantity = parseFloat(r.qty || r.quantity) || 0;
             quantity = requestQuantity ? requestQuantity.toLocaleString('en-IN') : '—';
             date = r.requestDate || '—';
-
-            const capitalAllocations = JSON.parse(localStorage.getItem('capitalAllocations') || '{}');
-            const department = r.department;
-            const allocationRecord = capitalAllocations[department];
-            if (allocationRecord) {
-                allocated = allocationRecord.allocated ? '₹' + Number(allocationRecord.allocated).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
-                const remainingAmount = (parseFloat(allocationRecord.allocated) || 0) - (parseFloat(allocationRecord.used) || 0);
-                pending = remainingAmount >= 0 ? '₹' + remainingAmount.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '₹0';
-            } else {
-                allocated = '—';
-                pending = '—';
-            }
-
-            if (rawStatus === 'approved_by_md' || String(r.status || '').toLowerCase().includes('approved')) {
-                used = r.allocatedFund ? '₹' + Number(r.allocatedFund).toLocaleString('en-IN', {maximumFractionDigits: 2}) : '—';
-            } else {
-                used = '—';
-            }
+            allocated = formatMoney(r.departmentAllocatedFund);
+            used = formatMoney(r.requiredFund);
+            pending = formatMoney(r.remainingFund);
         }
         return `<tr>
             <td style="font-weight:600;color:var(--navy);">${i + 1}</td>
@@ -512,15 +540,81 @@ function renderRecordsTable() {
             <td style="text-align:center;font-size:12px;color:#ca8a04;font-weight:600;">${used}</td>
             <td style="text-align:center;font-size:12px;color:#059669;font-weight:600;">${pending}</td>
             <td>${statusBadge}</td>
-            <td style="font-size:12px;color:var(--muted);">${escapeHtml(r.remarks || '—')}</td>
-            <td style="font-size:12px;color:var(--muted);">${escapeHtml(r.capitalMasterRemarks || '—')}</td>
             <td style="text-align:center;">
-                <button onclick="deleteRecord('${r.source}', '${r._id}')" style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#fecaca';" onmouseout="this.style.background='#fee2e2';">
-                    <i class="fa-solid fa-trash"></i> Delete
-                </button>
+                <div style="display:flex;gap:6px;justify-content:center;align-items:center;">
+                    <button onclick="showRecordInfo(${i})" title="More info" style="width:32px;height:32px;border:none;border-radius:8px;background:#ecfdf5;color:#047857;cursor:pointer;">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </button>
+                    <button onclick="deleteRecord('${r.source}', '${r._id}')" style="background:#fee2e2;color:#991b1b;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#fecaca';" onmouseout="this.style.background='#fee2e2';">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                </div>
             </td>
         </tr>`;
     }).join('');
+}
+
+function ensureRequestInfoBubble() {
+    if (document.getElementById('requestInfoBubble')) return;
+    document.body.insertAdjacentHTML('beforeend', '<div id="requestInfoBubble" style="display:none;position:fixed;right:24px;bottom:24px;width:min(420px,calc(100vw - 48px));max-height:70vh;overflow:auto;background:var(--card);border:1px solid var(--border);box-shadow:0 18px 45px rgba(15,23,42,.18);border-radius:12px;z-index:500;padding:18px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;"><div><div id="infoBubbleTitle" style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);font-size:15px;">Request Info</div><div id="infoBubbleSub" style="font-size:11px;color:var(--muted);margin-top:2px;"></div></div><button onclick="closeInfoBubble()" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:white;color:var(--muted);cursor:pointer;"><i class="fa-solid fa-xmark"></i></button></div><div id="infoBubbleBody" style="font-size:12px;color:var(--text);line-height:1.5;"></div></div>');
+}
+
+function detailRow(label, value) {
+    return '<div style="display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--border);padding:7px 0;"><span style="color:var(--muted);font-weight:700;">' + label + '</span><span style="text-align:right;">' + escapeHtml(value || '-') + '</span></div>';
+}
+
+function moneyValue(value) {
+    const amount = Number(value || 0);
+    return amount ? 'Rs. ' + amount.toLocaleString('en-IN') : '-';
+}
+
+function remarkBlock(label, value) {
+    return '<div style="margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;"><div style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:4px;">' + label + '</div><div>' + escapeHtml(value || '-') + '</div></div>';
+}
+
+function showRecordInfo(index) {
+    const record = displayedRecords[index];
+    if (!record) return;
+    const rawStatus = String(record.rawStatus || record.status || '').toLowerCase();
+    const denialReason = record.mdDenialReason || record.cfoDenialReason || record.financeManagerDenialReason || record.denialReason || '-';
+    let capitalMasterText = record.capitalMasterRemarks || '-';
+    let financeText = record.financeManagerRemarks || '-';
+    let cfoText = record.cfoRemarks || '-';
+    let mdText = record.mdRemarks || '-';
+
+    if (rawStatus === 'denied_by_capital_master') {
+        capitalMasterText = record.denialReason || capitalMasterText;
+    } else if (rawStatus === 'denied_by_finance_manager') {
+        financeText = record.financeManagerDenialReason || record.denialReason || financeText;
+    } else if (rawStatus === 'denied_by_cfo') {
+        cfoText = record.cfoDenialReason || record.denialReason || cfoText;
+    } else if (rawStatus === 'denied_by_md') {
+        mdText = record.mdDenialReason || record.denialReason || mdText;
+    }
+    ensureRequestInfoBubble();
+    document.getElementById('infoBubbleTitle').textContent = record.details || record.requesterName || 'Request Info';
+    document.getElementById('infoBubbleSub').textContent = (record.capitalId || record.requestId || record.id || '-') + ' - ' + (record.objectId || '-');
+    document.getElementById('infoBubbleBody').innerHTML =
+        detailRow('Requester', record.requesterName || record.userName || record.requestedBy) +
+        detailRow('Email', record.requesterEmail) +
+        detailRow('Next Step', record.requestTo) +
+        detailRow('Allocated Amount', Number(record.allowedAmount || record.departmentAllocatedFund || 0) ? moneyValue(record.allowedAmount || record.departmentAllocatedFund) : 'Funds not allocated') +
+        detailRow('Required Amount', moneyValue(record.requiredFund || record.allocatedFund || record.amount || record.assetValue)) +
+        detailRow('Remaining Amount', moneyValue(record.remainingFund)) +
+        detailRow('Status', record.statusLabel || record.status) +
+        (rawStatus.startsWith('denied_by_') ? detailRow('Denial Reason', denialReason) : '') +
+        '<div style="font-family:Syne,sans-serif;font-weight:800;color:var(--navy);margin-top:14px;">Remarks</div>' +
+        remarkBlock('Requester', record.remarks) +
+        remarkBlock('Capital Master', capitalMasterText) +
+        remarkBlock('Finance', financeText) +
+        remarkBlock('CFO', cfoText) +
+        remarkBlock('MD', mdText);
+    document.getElementById('requestInfoBubble').style.display = 'block';
+}
+
+function closeInfoBubble() {
+    const bubble = document.getElementById('requestInfoBubble');
+    if (bubble) bubble.style.display = 'none';
 }
 
 // Delete record
@@ -562,7 +656,7 @@ function exportTableToCSV() {
     let records = getAllRecords();
     if (currentFilter !== 'all') records = records.filter(r => r.source === currentFilter);
     
-    const headers = ['ID', 'Type', 'Date', 'Quantity', 'Available Fund (₹)', 'Required Fund (₹)', 'Remaining Fund (₹)', 'Status', 'Remarks'];
+    const headers = ['ID', 'Type', 'Date', 'Quantity', 'Available Fund (?)', 'Required Fund (?)', 'Remaining Fund (?)', 'Status', 'Remarks'];
     const rows = records.map(r => {
         let qty = '';
         let requiredFund = '';
@@ -575,18 +669,9 @@ function exportTableToCSV() {
         } else {
             const requestAmount = parseFloat(r.qty || r.requestedFund) || 0;
             qty = requestAmount ? requestAmount.toString() : '';
-            const capitalAllocations = JSON.parse(localStorage.getItem('capitalAllocations') || '{}');
-            const department = r.department;
-            const allocationRecord = capitalAllocations[department];
-            if (allocationRecord) {
-                allocated = allocationRecord.allocated || '';
-                remaining = (parseFloat(allocationRecord.allocated) || 0) - (parseFloat(allocationRecord.used) || 0);
-            }
-            if (r.status === 'Approved') {
-                requiredFund = r.allocatedFund ? r.allocatedFund.toString() : '';
-            } else {
-                requiredFund = '';
-            }
+            allocated = r.departmentAllocatedFund || '';
+            requiredFund = r.requiredFund || '';
+            remaining = r.remainingFund || '';
         }
         return [
             r.capitalId || r.requestId,

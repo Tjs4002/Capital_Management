@@ -9,12 +9,15 @@
     "phone": "",
     "status": "active",
     "isVerified": true,
-    "username": "admin"
+    "username": "admin",
+    "last_login_at": "2026-05-06T10:23:48.437Z",
+    "last_seen_at": "2026-05-06T11:08:08.980Z",
+    "force_logout_after": null
   },
   {
     "id": 2,
     "email": "master@capital.com",
-    "password": "$2a$10$.WsKEKl8XQCd3jV0it3jFe8ttMbfPwH2ggoMBF6KEpEYNRSSMOwme",
+    "password": "$2a$10$JL2fZiRtee/GzRH2IZNqTO00QKB2jn0i3cEP6pIO3eKvBH0PRw4Ly",
     "name": "Capital Master",
     "role": "capital_master",
     "department": "Finance",
@@ -23,13 +26,13 @@
     "isVerified": true,
     "username": "master",
     "last_login_at": "2026-05-06T09:38:27.116Z",
-    "last_seen_at": "2026-05-06T09:43:54.825Z",
+    "last_seen_at": "2026-05-06T09:49:02.062Z",
     "force_logout_after": null
   },
   {
     "id": 3,
     "email": "requester@capital.com",
-    "password": "$2a$10$N9IpGn1TsLe1jYhm8.ifeu0PHQGJoQhycShYmbcjnSim7XcLfLsQe",
+    "password": "$2a$10$JL2fZiRtee/GzRH2IZNqTO00QKB2jn0i3cEP6pIO3eKvBH0PRw4Ly",
     "name": "Asset Requester",
     "role": "requester",
     "department": "Operations",
@@ -49,8 +52,8 @@
     "status": "active",
     "isVerified": true,
     "username": "tjs4002",
-    "last_login_at": "2026-05-06T09:35:06.170Z",
-    "last_seen_at": "2026-05-06T09:36:25.516Z",
+    "last_login_at": "2026-05-06T09:53:13.460Z",
+    "last_seen_at": "2026-05-06T09:54:13.818Z",
     "force_logout_after": null
   },
   {
@@ -77,7 +80,7 @@
     "isVerified": true,
     "username": "bhavika",
     "last_login_at": "2026-05-06T09:29:00.913Z",
-    "last_seen_at": "2026-05-06T09:33:05.937Z",
+    "last_seen_at": "2026-05-06T11:03:34.795Z",
     "force_logout_after": null
   },
   {
@@ -91,18 +94,6 @@
     "status": "active",
     "isVerified": true,
     "username": "chavantejastushar"
-  },
-  {
-    "id": 8,
-    "email": "deshpanderaghav363@gmail.com",
-    "password": "$2a$10$NICPFQnKHW8jeBbT5Lx9Nuk73k/Id2PMcBR8gb8uWw7/4xqb/efwK",
-    "name": "raghav",
-    "department": "Sales",
-    "phone": "9096851337",
-    "role": "requester",
-    "status": "active",
-    "isVerified": true,
-    "username": "deshpanderaghav363"
   },
   {
     "id": 9,
@@ -126,19 +117,25 @@
     "role": "finance_head",
     "status": "active",
     "isVerified": true,
-    "username": "finance"
+    "username": "finance",
+    "last_login_at": "2026-05-06T09:50:16.579Z",
+    "last_seen_at": "2026-05-06T09:54:58.422Z",
+    "force_logout_after": null
   },
   {
     "id": 11,
     "email": "cfo@capital.com",
     "password": "$2a$10$JL2fZiRtee/GzRH2IZNqTO00QKB2jn0i3cEP6pIO3eKvBH0PRw4Ly",
-    "name": "Chief Finance Officer",
+    "name": "Chief Finance manager",
     "department": "Finance",
     "phone": "",
     "role": "cfo",
     "status": "active",
     "isVerified": true,
-    "username": "cfo"
+    "username": "cfo",
+    "last_login_at": "2026-05-06T10:12:32.666Z",
+    "last_seen_at": "2026-05-06T10:14:11.345Z",
+    "force_logout_after": null
   },
   {
     "id": 12,
@@ -150,7 +147,10 @@
     "role": "md",
     "status": "active",
     "isVerified": true,
-    "username": "md"
+    "username": "md",
+    "last_login_at": "2026-05-06T11:04:24.921Z",
+    "last_seen_at": "2026-05-06T11:12:57.217Z",
+    "force_logout_after": null
   },
   {
     "id": 13,
@@ -169,5 +169,22 @@
     "last_seen_at": "2026-05-06T09:28:11.514Z",
     "force_logout_after": null,
     "verified_at": "2026-05-06T09:27:04.846Z"
+  },
+  {
+    "id": 14,
+    "email": "deshpanderaghav363@gmail.com",
+    "username": "raghav1234",
+    "password": "$2a$10$MimHjegxh3Q6o1sKOxwECe/MTUhXXCEcq3pMAar0qznudhyATvWDC",
+    "name": "raghav deshpande",
+    "department": "Human Resources",
+    "phone": "9096851337",
+    "role": "requester",
+    "status": "active",
+    "isVerified": false,
+    "verification_email_sent_at": "2026-05-06T10:06:18.309Z",
+    "created_at": "2026-05-06T10:06:15.583Z",
+    "last_login_at": null,
+    "last_seen_at": null,
+    "force_logout_after": null
   }
 ]

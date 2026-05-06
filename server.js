@@ -116,6 +116,7 @@ function getUserSessionState(user) {
 }
 
 function sanitizeUser(user) {
+  const isVerified = user.isVerified === true || user.isVerified === 'true' || user.isVerified === 1;
   return {
     id: user.id,
     email: user.email,
@@ -126,6 +127,7 @@ function sanitizeUser(user) {
     status: user.status || 'active',
     sessionStatus: getUserSessionState(user),
     isOnline: getUserSessionState(user) === 'online',
+    isVerified,
     phone: user.phone || '',
     joinedDate: user.created_at ? String(user.created_at).slice(0, 10) : (user.verification_email_sent_at ? String(user.verification_email_sent_at).slice(0, 10) : (user.last_login_at ? String(user.last_login_at).slice(0, 10) : '')),
     lastLoginAt: user.last_login_at || '',
@@ -229,7 +231,11 @@ app.put('/api/users/:id', authMiddleware, (req, res) => {
     let users = readFile(USERS_FILE);
     const userIndex = users.findIndex(u => u.id == req.params.id);
     if (userIndex === -1) return res.status(404).json({ error: 'User not found' });
-    Object.assign(users[userIndex], req.body);
+    const updates = { ...req.body };
+    if (Object.prototype.hasOwnProperty.call(updates, 'isVerified')) {
+      updates.isVerified = updates.isVerified === true || updates.isVerified === 'true';
+    }
+    Object.assign(users[userIndex], updates);
     writeFile(USERS_FILE, users);
     res.json({ success: true, message: 'User updated' });
   } catch (error) { res.status(500).json({ error: error.message }); }

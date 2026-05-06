@@ -9,5 +9,115 @@
     "related_ticket_id": "TKT-20260506-U0004-0001",
     "is_read": false,
     "created_at": "2026-05-06T09:40:34.185Z"
+  },
+  {
+    "id": 2,
+    "user_id": 6,
+    "type": "pending-cfo",
+    "title": "Request sent to CFO",
+    "message": "Your request TKT-20260506-U0006-0004 was approved by Finance Head and moved to CFO.",
+    "related_id": 7,
+    "related_ticket_id": "TKT-20260506-U0006-0004",
+    "is_read": false,
+    "created_at": "2026-05-06T09:51:24.014Z"
+  },
+  {
+    "id": 3,
+    "user_id": 6,
+    "type": "pending-cfo",
+    "title": "Request sent to CFO",
+    "message": "Your request TKT-20260506-U0006-0007 was approved by Finance Head and moved to CFO.",
+    "related_id": 10,
+    "related_ticket_id": "TKT-20260506-U0006-0007",
+    "is_read": false,
+    "created_at": "2026-05-06T09:51:38.162Z"
+  },
+  {
+    "id": 4,
+    "user_id": 6,
+    "type": "pending-cfo",
+    "title": "Request sent to CFO",
+    "message": "Your request TKT-20260506-U0006-0008 was approved by Finance Head and moved to CFO.",
+    "related_id": 11,
+    "related_ticket_id": "TKT-20260506-U0006-0008",
+    "is_read": false,
+    "created_at": "2026-05-06T09:51:49.057Z"
+  },
+  {
+    "id": 5,
+    "user_id": 6,
+    "type": "pending-cfo",
+    "title": "Request sent to CFO",
+    "message": "Your request TKT-20260506-U0006-0001 was approved by Finance Head and moved to CFO.",
+    "related_id": 4,
+    "related_ticket_id": "TKT-20260506-U0006-0001",
+    "is_read": false,
+    "created_at": "2026-05-06T09:52:03.622Z"
+  },
+  {
+    "id": 6,
+    "user_id": 4,
+    "type": "denied",
+    "title": "Request declined by Finance Head",
+    "message": "Your request TKT-20260506-U0004-0001 was declined by Finance Head. Reason: black not available",
+    "related_id": 12,
+    "related_ticket_id": "TKT-20260506-U0004-0001",
+    "is_read": false,
+    "created_at": "2026-05-06T09:52:36.108Z"
+  },
+  {
+    "id": 7,
+    "user_id": 6,
+    "type": "cfo-denial",
+    "title": "Request declined by CFO",
+    "message": "Your request TKT-20260506-U0006-0004 was declined by CFO. Reason: not  need of cars",
+    "related_id": 7,
+    "related_ticket_id": "TKT-20260506-U0006-0004",
+    "is_read": false,
+    "created_at": "2026-05-06T10:13:16.379Z"
+  },
+  {
+    "id": 8,
+    "user_id": 6,
+    "type": "pending-md",
+    "title": "Request sent to MD",
+    "message": "Your request TKT-20260506-U0006-0001 was approved by CFO and moved to MD.",
+    "related_id": 4,
+    "related_ticket_id": "TKT-20260506-U0006-0001",
+    "is_read": false,
+    "created_at": "2026-05-06T10:14:11.348Z"
+  },
+  {
+    "id": 9,
+    "user_id": 6,
+    "type": "pending-md",
+    "title": "Request sent to MD",
+    "message": "Your request TKT-20260506-U0006-0007 was approved by CFO and moved to MD.",
+    "related_id": 10,
+    "related_ticket_id": "TKT-20260506-U0006-0007",
+    "is_read": false,
+    "created_at": "2026-05-06T10:14:25.228Z"
+  },
+  {
+    "id": 10,
+    "user_id": 6,
+    "type": "md-denial",
+    "title": "Request declined by MD",
+    "message": "Your request TKT-20260506-U0006-0007 was declined by MD. Reason: not needed",
+    "related_id": 10,
+    "related_ticket_id": "TKT-20260506-U0006-0007",
+    "is_read": false,
+    "created_at": "2026-05-06T10:16:32.759Z"
+  },
+  {
+    "id": 11,
+    "user_id": 6,
+    "type": "md_final_approval",
+    "title": "Request fully approved",
+    "message": "Your request TKT-20260506-U0006-0001 was approved by MD.",
+    "related_id": 4,
+    "related_ticket_id": "TKT-20260506-U0006-0001",
+    "is_read": false,
+    "created_at": "2026-05-06T10:17:15.898Z"
   }
 ]
