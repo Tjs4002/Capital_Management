@@ -153,7 +153,7 @@
                     <input type="number" id="quantityInput" min="1" required style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';">
                 </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px;">
                 <div>
                     <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;">Department</label>
                     <select id="departmentInput" required style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;cursor:pointer;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';">
@@ -165,10 +165,6 @@
                         <option>HR</option>
                         <option>Finance</option>
                     </select>
-                </div>
-                <div>
-                    <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;">Request Date</label>
-                    <input type="date" id="requestDateInput" required style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:var(--card);outline:none;transition:.2s;" onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.1)';" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';">
                 </div>
             </div>
             <div style="margin-bottom:16px;">
@@ -295,17 +291,18 @@ function canRequesterModify(record) {
 // Asset Request Form Submission
 document.getElementById("assetForm").addEventListener("submit", async function(e){
     e.preventDefault();
+    const todayString = new Date().toISOString().slice(0, 10);
 
     const payload = {
         itemName: document.getElementById('itemNameInput').value.trim(),
         quantity: Number(document.getElementById('quantityInput').value),
         department: document.getElementById('departmentInput').value,
-        requestDate: document.getElementById('requestDateInput').value,
+        requestDate: todayString,
         remarks: document.getElementById('remarksInput').value.trim()
     };
 
-    if (!payload.itemName || !payload.quantity || !payload.department || !payload.requestDate) {
-        alert('Please fill in item name, quantity, department, and request date.');
+    if (!payload.itemName || !payload.quantity || !payload.department) {
+        alert('Please fill in item name, quantity, and department.');
         return;
     }
 
@@ -532,7 +529,6 @@ function editAssetRecord(index) {
     document.getElementById('itemNameInput').value = record.itemName || record.assetName || '';
     document.getElementById('quantityInput').value = record.qty || record.quantity || '';
     document.getElementById('departmentInput').value = record.department || '';
-    document.getElementById('requestDateInput').value = record.requestDate || '';
     document.getElementById('remarksInput').value = record.remarks || '';
     document.getElementById('assetForm').setAttribute('data-edit-record-id', record.id);
     document.getElementById('assetForm').setAttribute('data-is-editing', 'true');

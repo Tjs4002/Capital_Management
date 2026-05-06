@@ -758,7 +758,7 @@ function renderRejectedRequests(requests) {
 
 // Update status counts
 function updateStatusCounts() {
-    fetch('/api/assets/status-counts', {
+    fetch('/api/assets', {
         headers: {
             'Authorization': 'Bearer ' + localStorage.getItem('authToken')
         }
@@ -766,9 +766,10 @@ function updateStatusCounts() {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            document.getElementById('pendingReviewCount').textContent = data.pendingReview || 0;
-            document.getElementById('approvedCount').textContent = data.finallyApproved || 0;
-            document.getElementById('deniedCount').textContent = data.finallyDenied || 0;
+            const assets = data.assets || [];
+            document.getElementById('pendingReviewCount').textContent = assets.filter(a => a.status === 'approved_by_cfo').length;
+            document.getElementById('approvedCount').textContent = assets.filter(a => a.status === 'approved_by_md').length;
+            document.getElementById('deniedCount').textContent = assets.filter(a => a.status === 'denied_by_md').length;
         }
     })
     .catch(err => console.error('Error updating counts:', err));

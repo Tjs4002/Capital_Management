@@ -788,8 +788,8 @@ function updateStatusCounts() {
     .then(data => {
         if (data.success) {
             const assets = data.assets || [];
-            document.getElementById('pendingReviewCount').textContent = assets.filter(isPendingForCfo).length;
-            document.getElementById('approvedCount').textContent = assets.filter(a => a.status === 'approved_by_cfo' || a.status === 'approved_by_md').length;
+            document.getElementById('pendingReviewCount').textContent = assets.filter(a => a.status === 'approved_by_finance_manager').length;
+            document.getElementById('approvedCount').textContent = assets.filter(a => a.status === 'approved_by_cfo').length;
             document.getElementById('deniedCount').textContent = assets.filter(a => a.status === 'denied_by_cfo').length;
         }
     })
