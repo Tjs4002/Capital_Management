@@ -11,7 +11,7 @@
     "isVerified": true,
     "username": "admin",
     "last_login_at": "2026-05-06T10:23:48.437Z",
-    "last_seen_at": "2026-05-06T11:08:08.980Z",
+    "last_seen_at": "2026-05-07T14:47:38.520Z",
     "force_logout_after": null
   },
   {
@@ -180,11 +180,12 @@
     "phone": "9096851337",
     "role": "requester",
     "status": "active",
-    "isVerified": false,
-    "verification_email_sent_at": "2026-05-06T10:06:18.309Z",
+    "isVerified": true,
+    "verification_email_sent_at": "2026-05-07T15:24:41.376Z",
     "created_at": "2026-05-06T10:06:15.583Z",
-    "last_login_at": null,
-    "last_seen_at": null,
-    "force_logout_after": null
+    "last_login_at": "2026-05-07T15:25:52.575Z",
+    "last_seen_at": "2026-05-07T15:25:52.575Z",
+    "force_logout_after": null,
+    "verified_at": "2026-05-07T15:25:45.706Z"
   }
 ]

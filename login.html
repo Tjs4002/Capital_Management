@@ -480,7 +480,7 @@
         resendBtn.textContent = 'Sending...';
 
         try {
-            const response = await fetch('/api/email-verification/resend-verification', {
+            const response = await fetch('/resend-verification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

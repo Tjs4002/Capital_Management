@@ -142,6 +142,10 @@ app.post('/api/auth/register', async (req, res) => {
     const cleanUsername = (username || '').trim();
     if (!email || !password || !name || !cleanUsername) return res.status(400).json({ error: 'Required fields missing' });
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return res.status(400).json({ error: 'Please provide a valid email address' });
+
     const users = readFile(USERS_FILE);
     if (users.find(u => u.email === email)) return res.status(400).json({ error: 'Email already exists' });
     if (users.find(u => String(u.username || '').toLowerCase() === cleanUsername.toLowerCase())) return res.status(400).json({ error: 'Username already exists' });

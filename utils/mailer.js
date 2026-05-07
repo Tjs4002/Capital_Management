@@ -1,5 +1,13 @@
 const nodemailer = require('nodemailer');
 
+// Validate required environment variables
+const requiredEnvVars = ['EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
+const missingEnvVars = requiredEnvVars.filter(env => !process.env[env]);
+
+if (missingEnvVars.length > 0) {
+  console.warn(`⚠️  Missing email configuration: ${missingEnvVars.join(', ')}`);
+}
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
@@ -17,7 +25,7 @@ const transporter = nodemailer.createTransport({
 // Test email connection on startup
 transporter.verify((error, success) => {
   if (error) {
-    console.error('❌ Email service error:', error);
+    console.error('❌ Email service error:', error.message);
   } else {
     console.log('✅ Email service ready');
   }
@@ -30,6 +38,17 @@ transporter.verify((error, success) => {
  * @param {string} [baseUrl]
  */
 async function sendVerificationEmail(toEmail, token, baseUrl) {
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!toEmail || !emailRegex.test(toEmail)) {
+    throw new Error(`Invalid email address: ${toEmail}`);
+  }
+
+  // Validate EMAIL_FROM is configured
+  if (!process.env.EMAIL_FROM) {
+    throw new Error('Email service not configured. Please set EMAIL_FROM environment variable.');
+  }
+
   const rootUrl = (baseUrl || process.env.PUBLIC_BASE_URL || process.env.BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
   const verifyUrl = `${rootUrl}/verify-email?token=${token}`;
 

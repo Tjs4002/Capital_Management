@@ -28,13 +28,19 @@ router.post('/send-verification', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: 'Email is required' });
 
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: 'Please provide a valid email address' });
+  }
+
   try {
     const token = generateToken(email);
     await sendVerificationEmail(email, token, getBaseUrl(req));
     res.json({ message: 'Verification email sent. Please check your inbox.' });
   } catch (err) {
     console.error('Mail error:', err);
-    res.status(500).json({ message: 'Failed to send verification email.' });
+    res.status(500).json({ message: err.message || 'Failed to send verification email.' });
   }
 });
 
@@ -74,24 +80,38 @@ router.get('/verify-email', async (req, res) => {
   }
 });
 
-// Resend link
+// Resend link - accepts email OR username
 router.post('/resend-verification', async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email is required' });
+  if (!email) return res.status(400).json({ message: 'Email or username is required' });
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  let actualEmail = email;
 
   try {
-    const token = generateToken(email);
-    await sendVerificationEmail(email, token, getBaseUrl(req));
+    // If it looks like a username (not an email), look it up in users.json
+    if (!emailRegex.test(email)) {
+      const usersData = JSON.parse(fs.readFileSync(usersJsonPath, 'utf8'));
+      const user = usersData.find(u => (u.username || '').toLowerCase() === email.toLowerCase());
+      
+      if (!user) {
+        return res.status(400).json({ message: 'User not found. Please check your email or username.' });
+      }
+      actualEmail = user.email;
+    }
+
+    const token = generateToken(actualEmail);
+    await sendVerificationEmail(actualEmail, token, getBaseUrl(req));
     const usersData = JSON.parse(fs.readFileSync(usersJsonPath, 'utf8'));
-    const userIndex = usersData.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+    const userIndex = usersData.findIndex(u => u.email.toLowerCase() === actualEmail.toLowerCase());
     if (userIndex !== -1) {
       usersData[userIndex].verification_email_sent_at = new Date().toISOString();
       fs.writeFileSync(usersJsonPath, JSON.stringify(usersData, null, 2));
     }
-    res.json({ message: 'A new verification email has been sent.' });
+    res.json({ message: 'A new verification email has been sent. Please check your inbox.' });
   } catch (err) {
     console.error('Mail error:', err);
-    res.status(500).json({ message: 'Failed to resend email.' });
+    res.status(500).json({ message: err.message || 'Failed to resend email.' });
   }
 });
 
