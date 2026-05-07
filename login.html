@@ -255,6 +255,45 @@
             color: #1d4ed8;
         }
 
+        .resend-link {
+            color: #3b82f6;
+            text-decoration: underline;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 12px;
+            padding: 0;
+            font-family: 'DM Sans', sans-serif;
+            transition: 0.2s;
+            margin-left: 4px;
+        }
+
+        .resend-link:hover {
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+
+        .resend-link:active {
+            opacity: 0.8;
+        }
+
+        .resend-success {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .resend-success.show {
+            display: flex;
+        }
+
         @media (max-width: 480px) {
             .login-container {
                 padding: 30px 20px;
@@ -293,6 +332,12 @@
         <div id="errorMessage" class="error-message">
             <i class="fa-solid fa-circle-exclamation"></i>
             <span id="errorText"></span>
+        </div>
+
+        <!-- RESEND SUCCESS MESSAGE -->
+        <div id="resendSuccess" class="resend-success">
+            <i class="fa-solid fa-check-circle"></i>
+            <span id="resendSuccessText">Verification email sent! Please check your inbox.</span>
         </div>
 
         <!-- SUCCESS MESSAGE -->
@@ -338,6 +383,8 @@
 
 <script>
 
+    let lastAttemptedEmail = ''; // Store email for resend functionality
+
     function handleLogin(event) {
         event.preventDefault();
         
@@ -345,18 +392,23 @@
         const password = document.getElementById('password').value;
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
+        const resendSuccess = document.getElementById('resendSuccess');
         const loginBtn = document.getElementById('loginBtn');
         const loading = document.getElementById('loading');
 
         // Clear previous messages
         errorMessage.classList.remove('show');
         successMessage.classList.remove('show');
+        resendSuccess.classList.remove('show');
 
         // Validate inputs
         if (!email || !password) {
             showError('Please enter email and password');
             return;
         }
+
+        // Store email for potential resend
+        lastAttemptedEmail = email;
 
         // Show loading state
         loginBtn.style.display = 'none';
@@ -407,8 +459,61 @@
     function showError(message) {
         const errorMessage = document.getElementById('errorMessage');
         const errorText = document.getElementById('errorText');
-        errorText.textContent = message;
+        
+        // Check if this is an email verification error
+        if (message.toLowerCase().includes('verify your email')) {
+            errorText.innerHTML = message + ' <button type="button" class="resend-link" onclick="resendVerificationEmail()">Resend mail</button>';
+        } else {
+            errorText.textContent = message;
+        }
         errorMessage.classList.add('show');
+    }
+
+    async function resendVerificationEmail() {
+        if (!lastAttemptedEmail) {
+            showError('Email not found. Please try logging in again.');
+            return;
+        }
+
+        const resendBtn = event.target;
+        resendBtn.disabled = true;
+        resendBtn.textContent = 'Sending...';
+
+        try {
+            const response = await fetch('/api/email-verification/resend-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: lastAttemptedEmail })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Show success message
+                const errorMessage = document.getElementById('errorMessage');
+                const resendSuccess = document.getElementById('resendSuccess');
+                errorMessage.classList.remove('show');
+                resendSuccess.classList.add('show');
+
+                // Reset button and auto-hide success message after 5 seconds
+                setTimeout(() => {
+                    resendSuccess.classList.remove('show');
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = 'Resend mail';
+                }, 5000);
+            } else {
+                showError(data.message || 'Failed to resend verification email. Please try again.');
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Resend mail';
+            }
+        } catch (error) {
+            console.error('Resend error:', error);
+            showError('Connection error. Please try again.');
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend mail';
+        }
     }
 
     function togglePasswordVisibility() {
