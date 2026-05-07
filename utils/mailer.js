@@ -10,6 +10,8 @@ const transporter = nodemailer.createTransport({
   },
   connectionTimeout: 10000, // 10 seconds
   socketTimeout: 10000,
+  greetingTimeout: 10000,
+  family: 4, // Force IPv4 only
 });
 
 // Test email connection on startup
