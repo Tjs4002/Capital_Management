@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": 1,
+    "user_id": 6,
+    "name": "Bhavika Wagh",
+    "email": "bhavika@gmail.com",
+    "subject": "Contact Support",
+    "message": "hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+    "message_date": "2026-05-18T05:40:07.869Z",
+    "status": "replied",
+    "replyMessage": "wut?",
+    "replyDate": "2026-05-18T05:40:21.651Z"
+  }
+]

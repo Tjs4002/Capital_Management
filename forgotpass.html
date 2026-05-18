@@ -873,5 +873,163 @@
         // Initialize
         updateSteps();
     </script>
+    <script>
+        // Real server-backed OTP password reset flow. These functions intentionally override
+        // the older demo/localStorage functions above.
+        window.passwordResetToken = '';
+
+        async function sendOTP() {
+            const email = document.getElementById('emailInput').value.trim();
+            clearFieldError('emailError');
+
+            if (!email) {
+                showError('emailError', 'Please enter your email address');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('emailError', 'Please enter a valid email address');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/password-reset/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await readApiResponse(response);
+                if (!response.ok) throw new Error(data.error || 'Failed to send OTP');
+
+                resetUserEmail = data.email || email;
+                window.passwordResetToken = '';
+                clearOtpInputs();
+                alert('OTP sent successfully. Please check your registered email.');
+                goToStep2();
+                startOTPTimer();
+            } catch (error) {
+                showError('emailError', error.message || 'Failed to send OTP. Please try again.');
+            }
+        }
+
+        async function verifyOTP() {
+            const otp = (
+                document.getElementById('otp1').value +
+                document.getElementById('otp2').value +
+                document.getElementById('otp3').value +
+                document.getElementById('otp4').value +
+                document.getElementById('otp5').value +
+                document.getElementById('otp6').value
+            ).trim();
+
+            clearFieldError('otpError');
+
+            if (otp.length !== 6) {
+                showError('otpError', 'Please enter the complete 6-digit OTP');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/password-reset/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: resetUserEmail, otp })
+                });
+                const data = await readApiResponse(response);
+                if (!response.ok) throw new Error(data.error || 'Invalid OTP. Please try again.');
+
+                resetUserEmail = data.email || resetUserEmail;
+                window.passwordResetToken = data.resetToken || '';
+                clearInterval(otpTimerInterval);
+                goToStep3();
+            } catch (error) {
+                showError('otpError', error.message || 'Invalid OTP. Please try again.');
+            }
+        }
+
+        function resendOTP() {
+            document.getElementById('emailInput').value = resetUserEmail;
+            sendOTP();
+        }
+
+        async function resetPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            clearFieldError('newPasswordError');
+            clearFieldError('confirmPasswordError');
+
+            if (newPassword.length < 8) {
+                showError('newPasswordError', 'Password must be at least 8 characters');
+                return;
+            }
+
+            if (!/[a-z]/.test(newPassword) || !/[A-Z]/.test(newPassword)) {
+                showError('newPasswordError', 'Password must contain uppercase and lowercase letters');
+                return;
+            }
+
+            if (!/[0-9]/.test(newPassword)) {
+                showError('newPasswordError', 'Password must contain at least one number');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showError('confirmPasswordError', 'Passwords do not match');
+                return;
+            }
+
+            if (!window.passwordResetToken) {
+                showError('newPasswordError', 'Please verify your OTP again before resetting password');
+                goToStep2();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/password-reset/confirm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: resetUserEmail,
+                        resetToken: window.passwordResetToken,
+                        newPassword
+                    })
+                });
+                const data = await readApiResponse(response);
+                if (!response.ok) throw new Error(data.error || 'Failed to reset password');
+
+                window.passwordResetToken = '';
+                showSuccessOverlay();
+            } catch (error) {
+                showError('newPasswordError', error.message || 'Failed to reset password. Please try again.');
+            }
+        }
+
+        function clearOtpInputs() {
+            ['otp1', 'otp2', 'otp3', 'otp4', 'otp5', 'otp6'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+
+        function clearFieldError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = '';
+            errorElement.classList.remove('show');
+        }
+
+        async function readApiResponse(response) {
+            const text = await response.text();
+            try {
+                return text ? JSON.parse(text) : {};
+            } catch (error) {
+                return {
+                    error: response.status === 404
+                        ? 'Password reset service is not available. Please restart the server and try again.'
+                        : 'Server returned an invalid response. Please restart the server and try again.'
+                };
+            }
+        }
+    </script>
 </body>
 </html>

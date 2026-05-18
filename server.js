@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcryptjs = require('bcryptjs');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -10,10 +11,11 @@ require('dotenv').config();
 const sequelize = require('./config/database');
 const User = require('./models/User');
 const { generateToken } = require('./utils/tokenStore');
-const { sendVerificationEmail } = require('./utils/mailer');
+const { sendVerificationEmail, sendPasswordResetOtp } = require('./utils/mailer');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const passwordResetOtps = new Map();
 
 // Data storage paths
 const DATA_DIR = path.join(__dirname, 'data');
@@ -57,6 +59,7 @@ const readFile = (filePath) => { try { return JSON.parse(fs.readFileSync(filePat
 const writeFile = (filePath, data) => { fs.writeFileSync(filePath, JSON.stringify(data, null, 2)); };
 const getNextId = (data) => Math.max(0, ...data.map(d => d.id || 0)) + 1;
 const getUsernameFromEmail = (email) => String(email || 'user').split('@')[0];
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 function getBaseUrl(req) {
   if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL.replace(/\/$/, '');
   const host = req.get('host') || '';
@@ -197,6 +200,113 @@ app.post('/api/auth/login', (req, res) => {
 
     const token = jwt.sign({ id: user.id, email: user.email, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ success: true, message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role } });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+function findUserForPasswordReset(identifier) {
+  const cleanIdentifier = String(identifier || '').trim().toLowerCase();
+  const users = readFile(USERS_FILE);
+  const user = users.find(u =>
+    normalizeEmail(u.email) === cleanIdentifier ||
+    String(u.username || '').trim().toLowerCase() === cleanIdentifier
+  );
+  return { users, user };
+}
+
+function validatePasswordResetPassword(password) {
+  if (String(password || '').length < 8) return 'Password must be at least 8 characters';
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) return 'Password must contain uppercase and lowercase letters';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+  return '';
+}
+
+app.post('/api/auth/password-reset/request', async (req, res) => {
+  try {
+    const identifier = String(req.body.email || '').trim();
+    if (!identifier) return res.status(400).json({ error: 'Email or username is required' });
+
+    const { user } = findUserForPasswordReset(identifier);
+    if (!user) return res.status(404).json({ error: 'User not found. Please check your email or username.' });
+
+    const otp = String(crypto.randomInt(100000, 1000000));
+    const email = normalizeEmail(user.email);
+    passwordResetOtps.set(email, {
+      otpHash: bcryptjs.hashSync(otp, 10),
+      expiresAt: Date.now() + 10 * 60 * 1000,
+      attempts: 0,
+      resetToken: '',
+      resetTokenExpiresAt: 0
+    });
+
+    await sendPasswordResetOtp(user.email, otp);
+    res.json({ success: true, message: 'OTP sent to your registered email.', email: user.email });
+  } catch (error) { res.status(500).json({ error: error.message || 'Failed to send OTP' }); }
+});
+
+app.post('/api/auth/password-reset/verify', (req, res) => {
+  try {
+    const identifier = String(req.body.email || '').trim();
+    const otp = String(req.body.otp || '').trim();
+    if (!identifier || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+    if (!/^\d{6}$/.test(otp)) return res.status(400).json({ error: 'Please enter a valid 6-digit OTP' });
+
+    const { user } = findUserForPasswordReset(identifier);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const email = normalizeEmail(user.email);
+    const otpRecord = passwordResetOtps.get(email);
+    if (!otpRecord || Date.now() > otpRecord.expiresAt) {
+      passwordResetOtps.delete(email);
+      return res.status(400).json({ error: 'OTP expired. Please request a new OTP.' });
+    }
+    if (otpRecord.attempts >= 5) {
+      passwordResetOtps.delete(email);
+      return res.status(429).json({ error: 'Too many invalid attempts. Please request a new OTP.' });
+    }
+    if (!bcryptjs.compareSync(otp, otpRecord.otpHash)) {
+      otpRecord.attempts += 1;
+      return res.status(400).json({ error: 'Invalid OTP. Please try again.' });
+    }
+
+    otpRecord.resetToken = crypto.randomBytes(24).toString('hex');
+    otpRecord.resetTokenExpiresAt = Date.now() + 10 * 60 * 1000;
+    res.json({ success: true, message: 'OTP verified', email: user.email, resetToken: otpRecord.resetToken });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/auth/password-reset/confirm', async (req, res) => {
+  try {
+    const identifier = String(req.body.email || '').trim();
+    const resetToken = String(req.body.resetToken || '').trim();
+    const newPassword = String(req.body.newPassword || '');
+    if (!identifier || !resetToken || !newPassword) return res.status(400).json({ error: 'Email, reset token, and new password are required' });
+
+    const passwordError = validatePasswordResetPassword(newPassword);
+    if (passwordError) return res.status(400).json({ error: passwordError });
+
+    const { users, user } = findUserForPasswordReset(identifier);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const email = normalizeEmail(user.email);
+    const otpRecord = passwordResetOtps.get(email);
+    if (!otpRecord || otpRecord.resetToken !== resetToken || Date.now() > otpRecord.resetTokenExpiresAt) {
+      passwordResetOtps.delete(email);
+      return res.status(400).json({ error: 'Reset session expired. Please request a new OTP.' });
+    }
+
+    const userIndex = users.findIndex(u => normalizeEmail(u.email) === email);
+    users[userIndex].password = bcryptjs.hashSync(newPassword, 10);
+    users[userIndex].password_reset_at = new Date().toISOString();
+    writeFile(USERS_FILE, users);
+
+    const dbUser = await User.findOne({ where: { email: user.email } }).catch(() => null);
+    if (dbUser) {
+      dbUser.password = newPassword;
+      await dbUser.save();
+    }
+
+    passwordResetOtps.delete(email);
+    res.json({ success: true, message: 'Password reset successful. You can now login with your new password.' });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
@@ -854,12 +964,110 @@ app.post('/api/notifications/clear-all', authMiddleware, (req, res) => {
 // Contact routes
 app.post('/api/contact', (req, res) => {
   try {
-    const { name, email, subject, message } = req.body;
+    const { name, email, subject, message, userId } = req.body;
     if (!name || !email || !subject || !message) return res.status(400).json({ error: 'All fields required' });
     let contacts = readFile(CONTACTS_FILE);
-    contacts.push({ id: getNextId(contacts), name, email, subject, message, message_date: new Date().toISOString(), status: 'pending' });
+    const contact = { id: getNextId(contacts), user_id: userId || null, name, email, subject, message, message_date: new Date().toISOString(), status: 'pending' };
+    contacts.push(contact);
     writeFile(CONTACTS_FILE, contacts);
-    res.json({ success: true, message: 'Message received' });
+
+    const users = readFile(USERS_FILE);
+    const notifications = readFile(NOTIFICATIONS_FILE);
+    users.filter(user => user.role === 'admin').forEach(admin => {
+      notifications.push({
+        id: getNextId(notifications),
+        user_id: admin.id,
+        type: 'contact-message',
+        title: `New Contact Message from ${name}`,
+        message,
+        contact_id: contact.id,
+        contact_name: name,
+        contact_email: email,
+        is_read: false,
+        created_at: contact.message_date
+      });
+    });
+    writeFile(NOTIFICATIONS_FILE, notifications);
+
+    res.json({ success: true, message: 'Message received', contact });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/contact/user/:id', authMiddleware, (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && String(req.user.id) !== String(req.params.id)) return res.status(403).json({ error: 'Unauthorized' });
+    const users = readFile(USERS_FILE);
+    const user = users.find(u => String(u.id) === String(req.params.id));
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const contacts = readFile(CONTACTS_FILE).filter(contact =>
+      String(contact.user_id || '') === String(user.id || '') ||
+      String(contact.email || '').toLowerCase() === String(user.email || '').toLowerCase()
+    );
+    res.json({ success: true, contacts, total: contacts.length });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/contact/:id/reply', (req, res) => {
+  try {
+    const replyMessage = String(req.body.replyMessage || '').trim();
+    if (!replyMessage) return res.status(400).json({ error: 'Reply message is required' });
+
+    const contacts = readFile(CONTACTS_FILE);
+    const contact = contacts.find(item => String(item.id) === String(req.params.id));
+    if (!contact) return res.status(404).json({ error: 'Contact message not found' });
+
+    contact.replyMessage = replyMessage;
+    contact.replyDate = new Date().toISOString();
+    contact.status = 'replied';
+    writeFile(CONTACTS_FILE, contacts);
+
+    res.json({ success: true, message: 'Reply sent', contact });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/contact/:id/user-reply', (req, res) => {
+  try {
+    const userReplyMessage = String(req.body.message || req.body.userReplyMessage || '').trim();
+    if (!userReplyMessage) return res.status(400).json({ error: 'Reply message is required' });
+
+    const contacts = readFile(CONTACTS_FILE);
+    const contact = contacts.find(item => String(item.id) === String(req.params.id));
+    if (!contact) return res.status(404).json({ error: 'Contact message not found' });
+
+    contact.userReplyMessage = userReplyMessage;
+    contact.userReplyDate = new Date().toISOString();
+    contact.status = 'user_replied';
+    writeFile(CONTACTS_FILE, contacts);
+
+    res.json({ success: true, message: 'Reply sent', contact });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/contact/clear', authMiddleware, (req, res) => {
+  try {
+    const users = readFile(USERS_FILE);
+    const currentUser = users.find(user => String(user.id) === String(req.user.id));
+    let contacts = readFile(CONTACTS_FILE);
+    const role = String(req.user.role || '').toLowerCase();
+
+    if (role === 'admin') {
+      contacts = [];
+    } else {
+      contacts = contacts.filter(contact =>
+        String(contact.user_id || '') !== String(req.user.id || '') &&
+        String(contact.email || '').toLowerCase() !== String(currentUser?.email || '').toLowerCase()
+      );
+    }
+    writeFile(CONTACTS_FILE, contacts);
+
+    let notifications = readFile(NOTIFICATIONS_FILE);
+    notifications = notifications.filter(notification => {
+      if (role === 'admin') return notification.type !== 'contact-message';
+      return !(String(notification.user_id) === String(req.user.id) && notification.type === 'contact-message');
+    });
+    writeFile(NOTIFICATIONS_FILE, notifications);
+
+    res.json({ success: true });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 

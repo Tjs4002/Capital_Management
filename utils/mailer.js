@@ -80,4 +80,40 @@ async function sendVerificationEmail(toEmail, token, baseUrl) {
   }
 }
 
-module.exports = { sendVerificationEmail };
+async function sendPasswordResetOtp(toEmail, otp) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!toEmail || !emailRegex.test(toEmail)) {
+    throw new Error(`Invalid email address: ${toEmail}`);
+  }
+
+  if (!process.env.EMAIL_FROM) {
+    throw new Error('Email service not configured. Please set EMAIL_FROM environment variable.');
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: toEmail,
+      subject: 'Your BudgetMS password reset OTP',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto;">
+          <h2>Password Reset OTP</h2>
+          <p>Use this OTP to reset your BudgetMS password:</p>
+          <div style="font-size:28px; font-weight:bold; letter-spacing:6px; padding:14px 18px; background:#eef2ff; color:#1d4ed8; border-radius:8px; text-align:center;">
+            ${otp}
+          </div>
+          <p style="margin-top:16px; color:#666; font-size:13px;">
+            This OTP expires in 10 minutes. If you did not request a password reset, ignore this email.
+          </p>
+        </div>
+      `,
+    });
+    console.log(`✅ Password reset OTP sent to ${toEmail}. Message ID: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send password reset OTP to ${toEmail}:`, error.message);
+    throw error;
+  }
+}
+
+module.exports = { sendVerificationEmail, sendPasswordResetOtp };

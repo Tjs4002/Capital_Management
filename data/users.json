@@ -10,8 +10,8 @@
     "status": "active",
     "isVerified": true,
     "username": "admin",
-    "last_login_at": "2026-05-06T10:23:48.437Z",
-    "last_seen_at": "2026-05-07T14:47:38.520Z",
+    "last_login_at": "2026-05-18T05:21:36.345Z",
+    "last_seen_at": "2026-05-18T05:40:13.903Z",
     "force_logout_after": null
   },
   {
@@ -25,8 +25,8 @@
     "status": "active",
     "isVerified": true,
     "username": "master",
-    "last_login_at": "2026-05-06T09:38:27.116Z",
-    "last_seen_at": "2026-05-06T09:49:02.062Z",
+    "last_login_at": "2026-05-18T04:55:04.339Z",
+    "last_seen_at": "2026-05-18T05:19:51.053Z",
     "force_logout_after": null
   },
   {
@@ -44,7 +44,7 @@
   {
     "id": 4,
     "email": "tejaschavan4002@gmail.com",
-    "password": "$2a$10$b4q2sCgQwv.eGu4amWBQ2Ot1GeKpobVEDWqEkrqUR5xXU4BMlZIpu",
+    "password": "$2a$10$iNi3/jIqYCg4MVE0hXjC6OHsmHxgpXhSpaTsnvYx6HfMgW5O28EFO",
     "name": "Tejas Chavan",
     "department": "IT",
     "phone": "9096851337",
@@ -54,7 +54,10 @@
     "username": "tjs4002",
     "last_login_at": "2026-05-06T09:53:13.460Z",
     "last_seen_at": "2026-05-06T09:54:13.818Z",
-    "force_logout_after": null
+    "force_logout_after": null,
+    "verification_email_sent_at": "2026-05-18T06:04:30.285Z",
+    "password_reset_at": "2026-05-18T06:06:21.481Z",
+    "verified_at": "2026-05-18T06:07:19.525Z"
   },
   {
     "id": 5,
@@ -79,8 +82,8 @@
     "status": "active",
     "isVerified": true,
     "username": "bhavika",
-    "last_login_at": "2026-05-06T09:29:00.913Z",
-    "last_seen_at": "2026-05-06T11:03:34.795Z",
+    "last_login_at": "2026-05-18T05:20:20.454Z",
+    "last_seen_at": "2026-05-18T05:40:26.364Z",
     "force_logout_after": null
   },
   {
@@ -156,7 +159,7 @@
     "id": 13,
     "email": "waghbhavika9@gmail.com",
     "username": "waghbhavika",
-    "password": "$2a$10$GeqTjhXd8igsuaWt2AGI..riSQwHC94GyG/pNSJevI0j0VQvVv.pO",
+    "password": "$2a$10$ZNOlqgokYHVVFBMRUI2/u.e.1hlR.GX3yLdxzL6BnxXOazWuuf.be",
     "name": "Bhavika Wagh",
     "department": "IT",
     "phone": "9307479621",
@@ -168,7 +171,8 @@
     "last_login_at": "2026-05-06T09:28:11.514Z",
     "last_seen_at": "2026-05-06T09:28:11.514Z",
     "force_logout_after": null,
-    "verified_at": "2026-05-06T09:27:04.846Z"
+    "verified_at": "2026-05-06T09:27:04.846Z",
+    "password_reset_at": "2026-05-18T06:03:29.298Z"
   },
   {
     "id": 14,

@@ -542,7 +542,7 @@ async function renderAssetNotifications() {
     }
     
     // Filter asset-related notifications
-    let assetNotifs = dashboardBackendNotifications.slice();
+    let assetNotifs = dashboardBackendNotifications.filter(n => n.type !== 'contact-message');
     if (currentUser.role !== 'Admin') {
         assetNotifs = assetNotifs.concat(userNotifications.filter(n => 
             (n.requesterEmail === currentUser.email) &&
@@ -628,8 +628,40 @@ async function renderMessageNotifications() {
     const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
     const container = document.getElementById('messageNotificationsContainer');
     const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User', id: null };
+    const currentRole = String(currentUser.role || '').toLowerCase();
     
     let messageNotifs = [];
+    let apiContactMessages = [];
+    const contactToken = localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+
+    if (currentRole === 'admin' && contactToken) {
+        try {
+            const response = await fetch('/api/contact', {
+                headers: { 'Authorization': `Bearer ${contactToken}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                apiContactMessages = (data.contacts || []).map(contact => ({
+                    _id: 'contact_' + contact.id,
+                    contactId: contact.id,
+                    type: 'contact-message',
+                    title: 'New Contact Message from ' + (contact.name || 'User'),
+                    message: contact.message || '',
+                    contactEmail: contact.email || '',
+                    contactName: contact.name || 'User',
+                    timestamp: contact.message_date ? new Date(contact.message_date).toLocaleString('en-IN') : '',
+                    createdAt: contact.message_date || '',
+                    read: contact.status === 'read',
+                    status: contact.status,
+                    replyMessage: contact.replyMessage || contact.reply_message || '',
+                    replyDate: contact.replyDate || contact.reply_date || ''
+                }));
+                window.dashboardApiContactMessages = apiContactMessages;
+            }
+        } catch (error) {
+            console.log('Could not fetch contact messages from API:', error);
+        }
+    }
     
     // Fetch contact replies from backend API if user is logged in
     let apiContactReplies = [];
@@ -647,15 +679,20 @@ async function renderMessageNotifications() {
                 // Transform API data to match notification format
                 apiContactReplies = (data.contacts || []).map(contact => ({
                     _id: contact.id,
-                    type: 'contact-reply',
-                    title: contact.subject,
-                    message: contact.replyMessage || contact.message,
+                    contactId: contact.id,
+                    type: (contact.replyMessage || contact.reply_message) ? 'contact-reply' : 'contact-message',
+                    title: (contact.replyMessage || contact.reply_message) ? contact.subject : 'Contact Message Sent',
+                    message: contact.replyMessage || contact.reply_message || contact.message,
                     contactEmail: contact.email,
                     toEmail: contact.email,
+                    senderUserId: contact.user_id || currentUser.id || '',
+                    senderEmail: contact.email || currentUser.email || '',
+                    contactName: contact.name || currentUser.name || 'User',
                     originalMessage: contact.message,
-                    adminReply: contact.replyMessage,
-                    replyDate: contact.replyDate,
-                    timestamp: new Date(contact.replyDate || contact.messageDate).toLocaleString(),
+                    adminReply: contact.replyMessage || contact.reply_message || '',
+                    replyDate: contact.replyDate || contact.reply_date || '',
+                    timestamp: new Date(contact.replyDate || contact.reply_date || contact.messageDate || contact.message_date).toLocaleString(),
+                    createdAt: contact.replyDate || contact.reply_date || contact.messageDate || contact.message_date || '',
                     read: false,
                     status: contact.status
                 }));
@@ -668,24 +705,37 @@ async function renderMessageNotifications() {
     // Fall back to localStorage if API fetch fails
     const contactReplies = apiContactReplies.length > 0 ? apiContactReplies : 
                            JSON.parse(localStorage.getItem('contactReplies') || '[]');
+    window.dashboardContactReplies = contactReplies;
+    window.dashboardUserContactMessages = contactReplies.filter(r => r.type === 'contact-message');
     
     // Regular users see contact messages and contact replies
-    if (currentUser.role !== 'Admin') {
+    if (currentRole !== 'admin') {
         messageNotifs = userNotifications.filter(n => 
-            (n.type === 'contact-message' && n.contactEmail !== currentUser.email) ||
+            isCurrentUserContactMessage(n, currentUser) ||
             n.type === 'user-reply'
         );
         
         // Add contact replies for this user (with status = 'replied')
+        const sentMessages = contactReplies.filter(r => r.type === 'contact-message');
         const userReplies = contactReplies.filter(r => r.status === 'replied' || r.adminReply);
-        messageNotifs = [...messageNotifs, ...userReplies];
+        messageNotifs = [...messageNotifs, ...sentMessages, ...userReplies];
     } else {
         // Admin sees contact messages and user replies
         messageNotifs = userNotifications.filter(n => 
             n.type === 'contact-message' || n.type === 'user-reply'
         );
+        const seenIds = new Set(messageNotifs.map(n => String(n._id)));
+        apiContactMessages.forEach(n => {
+            if (!seenIds.has(String(n._id))) messageNotifs.push(n);
+        });
     }
     
+    const messagesClearedAt = Number(localStorage.getItem('messagesClearedAt') || 0);
+    if (messagesClearedAt) {
+        messageNotifs = messageNotifs.filter(n => getNotificationSortTime(n) > messagesClearedAt);
+    }
+    messageNotifs = dedupeMessageNotifications(messageNotifs);
+
     if (!messageNotifs.length) {
         container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px;font-size:13px;">No messages yet.</p>';
         return;
@@ -752,12 +802,13 @@ function updateUnreadCount() {
     const unreadCount = document.getElementById('unreadNotifCount');
     
     let relevantNotifs = [];
+    const currentRole = String(currentUser.role || '').toLowerCase();
     
     // Regular users see asset notifications and contact replies
-    if (currentUser.role !== 'Admin') {
+    if (currentRole !== 'admin') {
         relevantNotifs = userNotifications.filter(n => 
-            (n.requesterEmail === currentUser.email) &&
-            !(n.type === 'contact-message' && n.contactEmail === currentUser.email)
+            ((n.requesterEmail === currentUser.email) || isCurrentUserContactMessage(n, currentUser)) &&
+            true
         );
         
         // Add contact replies for this user
@@ -799,11 +850,16 @@ let currentContactMessageId = null;
 
 function openContactMessage(messageId) {
     const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
-    const message = userNotifications.find(n => n._id === messageId && n.type === 'contact-message');
+    const backendMessages = window.dashboardApiContactMessages || [];
+    const userContactMessages = window.dashboardUserContactMessages || [];
+    const message = userNotifications.find(n => n._id === messageId && n.type === 'contact-message') ||
+        backendMessages.find(n => n._id === messageId && n.type === 'contact-message') ||
+        userContactMessages.find(n => String(n._id) === String(messageId) && n.type === 'contact-message');
     
     if (!message) return;
     
     currentContactMessageId = messageId;
+    window.currentContactMessage = message;
     
     // Mark as read
     message.read = true;
@@ -848,7 +904,7 @@ function loadAndDisplayReplies(messageId) {
 }
 
 /* ─────────────── SEND REPLY TO USER ─────────────── */
-function sendReplyToUser() {
+async function sendReplyToUser() {
     if (!currentContactMessageId) return;
     
     const replyText = document.getElementById('replyMessage').value.trim();
@@ -858,19 +914,49 @@ function sendReplyToUser() {
     }
     
     const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
-    const originalMessage = userNotifications.find(n => n._id === currentContactMessageId && n.type === 'contact-message');
+    const originalMessage = userNotifications.find(n => n._id === currentContactMessageId && n.type === 'contact-message') ||
+        window.currentContactMessage;
     
-    if (!originalMessage) return;
+    if (!originalMessage) {
+        alert('Could not find the message to reply to. Please refresh and try again.');
+        return;
+    }
+
+    const contactId = originalMessage.contactId || originalMessage.contact_id ||
+        (String(originalMessage._id || '').startsWith('contact_') ? String(originalMessage._id).replace('contact_', '') : '');
+
+    if (contactId) {
+        try {
+            const token = dashboardAuthToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = `Bearer ${token}`;
+            const response = await fetch(`/api/contact/${encodeURIComponent(contactId)}/reply`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ replyMessage: replyText })
+            });
+            if (!response.ok) {
+                const responseText = await response.text();
+                let errorData = {};
+                try { errorData = JSON.parse(responseText || '{}'); } catch (e) {}
+                throw new Error(errorData.error || 'Reply could not be sent');
+            }
+        } catch (error) {
+            console.log('Could not save reply to server, saving locally:', error);
+        }
+    }
     
     // Create reply notification
     const reply = {
         _id: Date.now().toString(),
+        contactId,
         type: 'contact-reply',
         title: 'Reply to your contact message',
         message: replyText,
         linkedContactMessageId: currentContactMessageId,
         toEmail: originalMessage.contactEmail,
         timestamp: new Date().toLocaleString(),
+        createdAt: new Date().toISOString(),
         read: false
     };
     
@@ -960,14 +1046,31 @@ async function clearAssetNotifications() {
 }
 
 /* ─────────────── CLEAR MESSAGE NOTIFICATIONS ─────────────── */
-function clearMessageNotifications() {
+async function clearMessageNotifications() {
     if (confirm('Clear all message notifications?')) {
+        const clearedAt = Date.now();
+        localStorage.setItem('messagesClearedAt', String(clearedAt));
+        window.dashboardApiContactMessages = [];
+        window.dashboardUserContactMessages = [];
+
+        try {
+            const token = dashboardAuthToken();
+            if (token) {
+                await fetch('/api/contact/clear', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }
+        } catch (error) {
+            console.log('Could not clear contact messages from server:', error);
+        }
+
         let userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
         let contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
         
         // Remove message-related notifications from userNotifications
         userNotifications = userNotifications.filter(n => 
-            !(n.type === 'contact-message' || n.type === 'user-reply')
+            !(n.type === 'contact-message' || n.type === 'contact-reply' || n.type === 'user-reply')
         );
         
         // Clear all contact replies
@@ -985,9 +1088,10 @@ let currentReplyToAdminId = null;
 function openReplyToAdmin(replyId) {
     const userNotifications = JSON.parse(localStorage.getItem('userNotifications') || '[]');
     const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
+    const apiReplies = window.dashboardContactReplies || [];
     
-    // Try to find in contactReplies (from API) first
-    let reply = contactReplies.find(r => r._id == replyId);
+    // Try to find in API replies first, then local replies
+    let reply = apiReplies.find(r => r._id == replyId) || contactReplies.find(r => r._id == replyId);
     
     // Fall back to searching in userNotifications
     if (!reply) {
@@ -997,6 +1101,7 @@ function openReplyToAdmin(replyId) {
     if (!reply) return;
     
     currentReplyToAdminId = replyId;
+    window.currentReplyToAdmin = reply;
     
     // Mark as read
     reply.read = true;
@@ -1032,7 +1137,7 @@ function openReplyToAdmin(replyId) {
 }
 
 /* ─────────────── SEND REPLY TO ADMIN ─────────────── */
-function sendReplyToAdmin() {
+async function sendReplyToAdmin() {
     if (!currentReplyToAdminId) return;
     
     const replyText = document.getElementById('userReplyText').value.trim();
@@ -1042,15 +1147,31 @@ function sendReplyToAdmin() {
     }
     
     const contactReplies = JSON.parse(localStorage.getItem('contactReplies') || '[]');
-    const adminReply = contactReplies.find(r => r._id == currentReplyToAdminId);
+    const apiReplies = window.dashboardContactReplies || [];
+    const adminReply = apiReplies.find(r => r._id == currentReplyToAdminId) ||
+        contactReplies.find(r => r._id == currentReplyToAdminId) ||
+        window.currentReplyToAdmin;
     
     if (!adminReply) return;
     
     const currentUser = JSON.parse(localStorage.getItem('currentUser')) || { email: 'user@capital.com', role: 'User' };
+    const contactId = adminReply.contactId || adminReply.contact_id || adminReply._id;
+    if (contactId) {
+        try {
+            await fetch(`/api/contact/${encodeURIComponent(contactId)}/user-reply`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: replyText })
+            });
+        } catch (error) {
+            console.log('Could not save user reply to server, saving locally:', error);
+        }
+    }
     
     // Create user's reply notification (stored in userNotifications so admin can see it)
     const userReply = {
         _id: 'userreply_' + Date.now(),
+        contactId,
         type: 'user-reply',
         title: 'User Reply: ' + (adminReply.title || 'Response'),
         message: replyText,
@@ -1466,20 +1587,34 @@ async function validateAndSendContactForm() {
         name: name,
         email: email,
         message: message,
-        timestamp: now.toLocaleString('en-IN')
+        senderUserId: getDashboardUser().id || '',
+        senderEmail: getDashboardUser().email || email,
+        timestamp: now.toLocaleString('en-IN'),
+        createdAt: now.toISOString()
     };
-    
-    // Save to localStorage
-    saveContactMessage(messageObj);
-    
-    // Send notification to admin
-    sendAdminNotification(messageObj);
+
+    try {
+        await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                userId: getDashboardUser().id || '',
+                subject: 'Contact Support',
+                message: message
+            })
+        });
+    } catch (error) {
+        console.log('Could not save contact message to server:', error);
+    }
     
     // Reset form
     document.getElementById('contactName').value = '';
     document.getElementById('contactEmail').value = '';
     document.getElementById('contactMessage').value = '';
     closeModal('contactModal');
+    await renderNotifications();
     
     alert('✓ Message sent successfully!\n\nYour message has been sent to the admin.');
 }
@@ -1501,8 +1636,11 @@ function sendAdminNotification(messageObj) {
         title: `New Contact Message from ${messageObj.name}`,
         message: `Email: ${messageObj.email}\n\nMessage: ${messageObj.message}`,
         contactEmail: messageObj.email,
+        senderUserId: messageObj.senderUserId || '',
+        senderEmail: messageObj.senderEmail || messageObj.email,
         contactName: messageObj.name,
         timestamp: new Date().toLocaleString(),
+        createdAt: new Date().toISOString(),
         read: false
     });
     
@@ -1655,6 +1793,42 @@ let dashboardAssetRecords = [];
 
 function dashboardAuthToken() {
     return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
+}
+
+function isCurrentUserContactMessage(notification, currentUser) {
+    if (!notification || notification.type !== 'contact-message') return false;
+    return String(notification.senderUserId || '') === String(currentUser.id || '') ||
+        String(notification.senderEmail || '').toLowerCase() === String(currentUser.email || '').toLowerCase() ||
+        String(notification.contactEmail || '').toLowerCase() === String(currentUser.email || '').toLowerCase();
+}
+
+function getNotificationSortTime(notification) {
+    const value = notification?.createdAt || notification?.created_at || notification?.replyDate ||
+        notification?.messageDate || notification?.message_date || notification?.timestamp || '';
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function dedupeMessageNotifications(notifications) {
+    const seen = new Set();
+    return notifications.filter(notification => {
+        const normalizedMessage = String(notification.originalMessage || notification.message || '')
+            .replace(/^Email:\s*.*?\s*Message:\s*/is, '')
+            .trim()
+            .toLowerCase();
+        const normalizedEmail = String(notification.contactEmail || notification.senderEmail || notification.toEmail || '')
+            .trim()
+            .toLowerCase();
+        const key = [
+            notification.type || '',
+            normalizedEmail,
+            normalizedMessage,
+            Math.floor(getNotificationSortTime(notification) / 60000)
+        ].join('|');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 function escapeHtml(value) {

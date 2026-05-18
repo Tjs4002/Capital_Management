@@ -119,5 +119,17 @@
     "related_ticket_id": "TKT-20260506-U0006-0001",
     "is_read": false,
     "created_at": "2026-05-06T10:17:15.898Z"
+  },
+  {
+    "id": 12,
+    "user_id": 1,
+    "type": "contact-message",
+    "title": "New Contact Message from Bhavika Wagh",
+    "message": "hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+    "contact_id": 1,
+    "contact_name": "Bhavika Wagh",
+    "contact_email": "bhavika@gmail.com",
+    "is_read": false,
+    "created_at": "2026-05-18T05:40:07.869Z"
   }
 ]

@@ -2,9 +2,9 @@
   {
     "id": 1,
     "capital_type": "Manufacturing",
-    "allocated_amount": 100000,
-    "used_amount": 0,
-    "available_amount": 100000,
+    "allocated_amount": 500000,
+    "used_amount": 5000,
+    "available_amount": 495000,
     "remarks": ""
   },
   {
