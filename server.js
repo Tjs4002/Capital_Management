@@ -199,7 +199,7 @@ app.post('/api/auth/login', (req, res) => {
     writeFile(USERS_FILE, users);
 
     const token = jwt.sign({ id: user.id, email: user.email, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role } });
+    res.json({ success: true, message: 'Login successful', token, user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role, department: user.department || '' } });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 

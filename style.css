@@ -379,6 +379,7 @@ body:not(:has(> .sidebar)) .main{margin-left:0;}
 .stat-icon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;}
 .ic-blue{background:#dbeafe;color:#1d4ed8;}.ic-orange{background:#fef3c7;color:#d97706;}.ic-gold{background:#fef3c7;color:#d97706;}.ic-green{background:#d1fae5;color:#059669;}.ic-emerald{background:#d1fae5;color:#059669;}.ic-rose{background:#fee2e2;color:#e11d48;}
 .stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--text);line-height:1;}
+.stats-grid .stat-num[id$="Fund"]{font-size:24px;letter-spacing:0;line-height:1.15;margin-bottom:6px;word-break:break-word;}
 .stat-label{font-size:12.5px;color:var(--muted);margin-top:4px;}
 .stat-change{position:absolute;top:16px;right:16px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;}
 .up{background:#d1fae5;color:#059669;}.down{background:#fee2e2;color:#e11d48;}

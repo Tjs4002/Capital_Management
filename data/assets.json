@@ -66,16 +66,20 @@
     "item_name": "table",
     "asset_name": "table",
     "quantity": 20,
-    "amount": 0,
-    "asset_value": 0,
+    "amount": 30000,
+    "asset_value": 30000,
     "department": "Sales",
     "capital_type": "Sales",
     "remarks": "user remark table",
     "asset_description": "user remark table",
-    "status": "pending_capital_master",
-    "current_step": "Capital Master",
+    "status": "approved_by_capital_master",
+    "current_step": "Finance Head",
     "requested_on": "2026-05-06T07:21:17.140Z",
-    "request_date": "2026-05-01"
+    "request_date": "2026-05-01",
+    "capital_master_remarks": "",
+    "capital_master_approved_by": 2,
+    "capital_master_approved_on": "2026-05-18T08:08:49.454Z",
+    "allocated_fund": 30000
   },
   {
     "id": 7,
@@ -235,5 +239,27 @@
     "finance_manager_denial_reason": "black not available",
     "denial_reason": "black not available",
     "denied_on": "2026-05-06T09:52:36.107Z"
+  },
+  {
+    "id": 13,
+    "object_id": "OBJ-20260518-U0004-0002",
+    "ticket_id": "TKT-20260518-U0004-0002",
+    "request_sequence": 2,
+    "user_id": 4,
+    "item_name": "engine",
+    "asset_name": "engine",
+    "quantity": 4,
+    "amount": 0,
+    "asset_value": 0,
+    "department": "Manufacturing",
+    "capital_type": "Manufacturing",
+    "remarks": "1234",
+    "asset_description": "1234",
+    "status": "denied_by_capital_master",
+    "current_step": "Closed",
+    "requested_on": "2026-05-18T08:04:08.798Z",
+    "request_date": "2026-05-18",
+    "denial_reason": "out of funds",
+    "denied_on": "2026-05-18T08:08:20.986Z"
   }
 ]

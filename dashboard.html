@@ -201,17 +201,27 @@
     <!-- STAT CARDS -->
     <div class="stats-grid">
         <div class="stat-card blue">
-            <div class="stat-change up">Live</div>
-            <div class="stat-icon ic-blue"><i class="fa-solid fa-layer-group"></i></div>
-            <div class="stat-num" id="statTotal">0</div>
-            <div class="stat-label">Total Records</div>
+            <div class="stat-change up">Allocated</div>
+            <div class="stat-icon ic-blue"><i class="fa-solid fa-wallet"></i></div>
+            <div class="stat-label" id="statFundScope" style="margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;">Funds</div>
+            <div class="stat-num" id="statTotalFund">Rs. 0</div>
+            <div class="stat-label" style="font-weight:700;color:var(--text);">Total Fund</div>
         </div>
 
         <div class="stat-card green">
-            <div class="stat-change up">Asset</div>
-            <div class="stat-icon ic-green"><i class="fa-solid fa-box"></i></div>
-            <div class="stat-num" id="statAsset">0</div>
-            <div class="stat-label">capital Requests</div>
+            <div class="stat-change up">Used</div>
+            <div class="stat-icon ic-green"><i class="fa-solid fa-money-bill-transfer"></i></div>
+            <div class="stat-label" style="margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;">Used so far</div>
+            <div class="stat-num" id="statUsedFund">Rs. 0</div>
+            <div class="stat-label" style="font-weight:700;color:var(--text);">Consumed Fund</div>
+        </div>
+
+        <div class="stat-card orange">
+            <div class="stat-change up">Available</div>
+            <div class="stat-icon ic-orange"><i class="fa-solid fa-sack-dollar"></i></div>
+            <div class="stat-label" style="margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;">Balance</div>
+            <div class="stat-num" id="statRemainingFund">Rs. 0</div>
+            <div class="stat-label" style="font-weight:700;color:var(--text);">Remaining Fund</div>
         </div>
 
     </div>
@@ -2059,6 +2069,37 @@ async function loadDashboardData() {
     return { assets: dashboardAssetRecords, allocations: dashboardAllocations };
 }
 
+function normalizeDashboardDepartment(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function getDashboardUserDepartment() {
+    const user = getDashboardUser();
+    if (user.department) return user.department;
+    const ownRecord = dashboardAssetRecords.find(function(record) {
+        return String(record.requesterEmail || '').toLowerCase() === String(user.email || '').toLowerCase() ||
+            String(record.user_id || record.userId || '') === String(user.id || '');
+    });
+    return ownRecord ? (ownRecord.department || ownRecord.capital_type || '') : '';
+}
+
+function getScopedDashboardAllocations() {
+    const user = getDashboardUser();
+    const role = String(user.role || '').toLowerCase();
+    if (role === 'admin') return dashboardAllocations;
+
+    const department = normalizeDashboardDepartment(getDashboardUserDepartment());
+    if (!department) return [];
+
+    return dashboardAllocations.filter(function(allocation) {
+        return normalizeDashboardDepartment(allocation.capital_type || allocation.department) === department;
+    });
+}
+
+function dashboardMoney(value) {
+    return 'Rs. ' + Number(value || 0).toLocaleString('en-IN');
+}
+
 function visiblePendingCapitalMasterCount() {
     return dashboardAssetRecords.filter(function(r) {
         return r.status === 'pending_capital_master' || r.status === 'pending' || r.statusLabel === 'Pending Capital Master';
@@ -2067,9 +2108,28 @@ function visiblePendingCapitalMasterCount() {
 
 async function renderStats() {
     if (!dashboardDataLoaded) await loadDashboardData();
+    const scopedAllocations = getScopedDashboardAllocations();
+    const totalFund = scopedAllocations.reduce(function(sum, allocation) {
+        return sum + Number(allocation.allocated_amount || allocation.allocatedAmount || 0);
+    }, 0);
+    const usedFund = scopedAllocations.reduce(function(sum, allocation) {
+        return sum + Number(allocation.used_amount || allocation.usedAmount || 0);
+    }, 0);
+    const remainingFund = scopedAllocations.reduce(function(sum, allocation) {
+        if (allocation.available_amount !== undefined) return sum + Number(allocation.available_amount || 0);
+        if (allocation.availableAmount !== undefined) return sum + Number(allocation.availableAmount || 0);
+        return sum + Number(allocation.allocated_amount || 0) - Number(allocation.used_amount || 0);
+    }, 0);
+    const user = getDashboardUser();
+    const scopeLabel = String(user.role || '').toLowerCase() === 'admin' ? 'All Departments' : (getDashboardUserDepartment() || 'Your Department');
+
+    document.getElementById('statTotalFund').textContent = dashboardMoney(totalFund);
+    document.getElementById('statUsedFund').textContent = dashboardMoney(usedFund);
+    document.getElementById('statRemainingFund').textContent = dashboardMoney(remainingFund);
+    const scope = document.getElementById('statFundScope');
+    if (scope) scope.textContent = scopeLabel;
+
     const totalAssets = dashboardAssetRecords.length;
-    document.getElementById('statTotal').textContent = totalAssets;
-    document.getElementById('statAsset').textContent = totalAssets;
     document.getElementById('assetCount').textContent = totalAssets || '';
     const capBadge = document.getElementById('capCount');
     if (capBadge) capBadge.textContent = visiblePendingCapitalMasterCount() || '';
@@ -2105,12 +2165,13 @@ async function renderFundBars() {
     if (!dashboardDataLoaded) await loadDashboardData();
     const wrap = document.getElementById('fundBars');
     if (!wrap) return;
-    if (!dashboardAllocations.length) {
+    const scopedAllocations = getScopedDashboardAllocations();
+    if (!scopedAllocations.length) {
         wrap.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">No fund allocations yet.</div>';
         return;
     }
     const colors = ['#3b82f6','#10b981','#f59e0b','#f43f5e','#8b5cf6','#06b6d4'];
-    wrap.innerHTML = dashboardAllocations.slice(0, 6).map(function(r, i) {
+    wrap.innerHTML = scopedAllocations.slice(0, 6).map(function(r, i) {
         const allocated = Number(r.allocated_amount || 0);
         const used = Number(r.used_amount || 0);
         const pct = allocated > 0 ? Math.min(100, Math.round((used / allocated) * 100)) : 0;

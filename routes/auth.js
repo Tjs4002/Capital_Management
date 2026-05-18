@@ -137,6 +137,7 @@ router.post('/login', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
+        department: user.department || '',
       },
     });
   } catch (error) {

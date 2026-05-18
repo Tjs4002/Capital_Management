@@ -131,5 +131,27 @@
     "contact_email": "bhavika@gmail.com",
     "is_read": false,
     "created_at": "2026-05-18T05:40:07.869Z"
+  },
+  {
+    "id": 13,
+    "user_id": 4,
+    "type": "denied",
+    "title": "Request declined by Capital Master",
+    "message": "Your request TKT-20260518-U0004-0002 was declined by Capital Master. Reason: out of funds",
+    "related_id": 13,
+    "related_ticket_id": "TKT-20260518-U0004-0002",
+    "is_read": false,
+    "created_at": "2026-05-18T08:08:20.993Z"
+  },
+  {
+    "id": 14,
+    "user_id": 6,
+    "type": "pending-finance",
+    "title": "Request sent to Finance Head",
+    "message": "Your request TKT-20260506-U0006-0003 was approved by Capital Master and moved to Finance Head.",
+    "related_id": 6,
+    "related_ticket_id": "TKT-20260506-U0006-0003",
+    "is_read": false,
+    "created_at": "2026-05-18T08:08:49.457Z"
   }
 ]

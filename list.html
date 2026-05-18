@@ -178,6 +178,19 @@
                     <button class="tab-btn" onclick="filterRecords('pending')" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabPending">Pending</button>
                     <button class="tab-btn" onclick="filterRecords('approved')" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabApproved">Approved</button>
                     <button class="tab-btn" onclick="filterRecords('denied')" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;" id="tabDenied">Denied</button>
+                    <div style="position:relative;">
+                        <button id="sortButton" onclick="toggleSortMenu()" style="padding:6px 14px;border:1.5px solid #e5e7eb;background:var(--card);color:var(--text);border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:7px;">
+                            <i class="fa-solid fa-arrow-up-wide-short"></i><span id="sortLabel">Sort</span>
+                        </button>
+                        <div id="sortMenu" style="display:none;position:fixed;width:240px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 32px rgba(15,23,42,.16);z-index:1000;overflow-y:auto;">
+                            <button class="sort-option" onclick="setRecordSort('newest')" style="width:100%;padding:10px 12px;border:none;background:white;text-align:left;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);"><i class="fa-solid fa-clock" style="width:18px;color:#3b82f6;"></i> Newest first</button>
+                            <button class="sort-option" onclick="setRecordSort('oldest')" style="width:100%;padding:10px 12px;border:none;background:white;text-align:left;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);"><i class="fa-solid fa-clock-rotate-left" style="width:18px;color:#64748b;"></i> Oldest first</button>
+                            <button class="sort-option" onclick="setRecordSort('capital_master')" style="width:100%;padding:10px 12px;border:none;background:white;text-align:left;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);"><i class="fa-solid fa-building-columns" style="width:18px;color:#0f766e;"></i> Capital Master role</button>
+                            <button class="sort-option" onclick="setRecordSort('finance')" style="width:100%;padding:10px 12px;border:none;background:white;text-align:left;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);"><i class="fa-solid fa-money-bill-trend-up" style="width:18px;color:#16a34a;"></i> Finance role</button>
+                            <button class="sort-option" onclick="setRecordSort('cfo')" style="width:100%;padding:10px 12px;border:none;background:white;text-align:left;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);"><i class="fa-solid fa-crown" style="width:18px;color:#a855f7;"></i> CFO role</button>
+                            <button class="sort-option" onclick="setRecordSort('md')" style="width:100%;padding:10px 12px;border:none;background:white;text-align:left;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);"><i class="fa-solid fa-gem" style="width:18px;color:#e11d48;"></i> MD role</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <button class="sc-link" onclick="exportTableToCSV()" style="background:#059669;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#047857';" onmouseout="this.style.background='#059669';">
@@ -324,6 +337,7 @@ const monthYear = today.toLocaleString('en-IN', { month: 'short', year: 'numeric
 document.getElementById('pageDay').textContent = monthYear;
 
 let currentFilter = 'all';
+let currentSort = 'newest';
 let recordsCache = [];
 let displayedRecords = [];
 
@@ -451,6 +465,148 @@ function filterRecords(type) {
     renderRecordsTable();
 }
 
+function toggleSortMenu() {
+    const menu = document.getElementById('sortMenu');
+    if (!menu) return;
+    if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+        return;
+    }
+    const trigger = document.getElementById('sortButton');
+    if (!trigger) return;
+    if (menu.parentElement !== document.body) {
+        document.body.appendChild(menu);
+    }
+    const rect = trigger.getBoundingClientRect();
+    const menuWidth = 240;
+    const menuHeight = 252;
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - menuWidth - 12));
+    const bottomTop = rect.bottom + 8;
+    const top = bottomTop + menuHeight > window.innerHeight - 12
+        ? Math.max(12, rect.top - menuHeight - 8)
+        : bottomTop;
+    menu.style.width = menuWidth + 'px';
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+    menu.style.right = 'auto';
+    menu.style.maxHeight = Math.min(menuHeight, Math.max(180, window.innerHeight - top - 12)) + 'px';
+    menu.style.overflowY = 'auto';
+    menu.style.zIndex = '1000';
+    menu.style.display = 'block';
+}
+
+function setRecordSort(sortType) {
+    currentSort = sortType;
+    const labels = {
+        newest: 'Newest',
+        oldest: 'Oldest',
+        capital_master: 'Capital Master',
+        finance: 'Finance',
+        cfo: 'CFO',
+        md: 'MD'
+    };
+    const label = document.getElementById('sortLabel');
+    if (label) label.textContent = labels[sortType] || 'Sort';
+    const menu = document.getElementById('sortMenu');
+    if (menu) menu.style.display = 'none';
+    renderRecordsTable();
+}
+
+function getRecordTime(record) {
+    const value = record.requestDate || record.request_date || record.requestedOn || record.requested_on || '';
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getRecordRequiredFund(record) {
+    return Number(record.requiredFund || record.allocatedFund || record.amount || record.assetValue || 0);
+}
+
+function getRecordWorkflowStage(record) {
+    const status = String(record.rawStatus || record.status || '').toLowerCase();
+    if (status.startsWith('denied_by_') || status.includes('denied')) return 'denied';
+    if (status === 'approved_by_md' || status === 'approved') return 'completed';
+    if (status === 'approved_by_cfo') return 'md';
+    if (status === 'approved_by_finance_manager') return 'cfo';
+    if (status === 'approved_by_capital_master') return 'finance';
+    if (status === 'pending_capital_master' || status === 'pending' || status.includes('pending capital')) return 'capital_master';
+    return 'requester';
+}
+
+function getRecordRoleHistory(record) {
+    const status = String(record.rawStatus || record.status || '').toLowerCase();
+    const roles = ['requester'];
+    if (status === 'pending_capital_master' || status === 'pending' || status.includes('pending capital')) return roles;
+
+    roles.push('capital_master');
+    if (status === 'approved_by_capital_master' || status === 'denied_by_capital_master') return roles;
+
+    roles.push('finance');
+    if (status === 'approved_by_finance_manager' || status === 'denied_by_finance_manager') return roles;
+
+    roles.push('cfo');
+    if (status === 'approved_by_cfo' || status === 'denied_by_cfo') return roles;
+
+    roles.push('md');
+    return roles;
+}
+
+function roleSortRank(record, role) {
+    return getRecordRoleHistory(record).includes(role) ? 0 : 1;
+}
+
+function isRoleSort(sortType) {
+    return ['capital_master', 'finance', 'cfo', 'md'].includes(sortType);
+}
+
+function recordMatchesRoleFilter(record, role) {
+    const status = String(record.rawStatus || record.status || '').toLowerCase();
+    if (role === 'capital_master') {
+        return status === 'pending_capital_master' ||
+            status === 'pending' ||
+            status === 'approved_by_capital_master' ||
+            status === 'denied_by_capital_master' ||
+            status.includes('pending capital') ||
+            status.includes('awaiting capital') ||
+            status.includes('denied by capital');
+    }
+    if (role === 'finance') {
+        return status === 'approved_by_capital_master' ||
+            status === 'approved_by_finance_manager' ||
+            status === 'denied_by_finance_manager' ||
+            status.includes('awaiting finance') ||
+            status.includes('denied by finance');
+    }
+    if (role === 'cfo') {
+        return status === 'approved_by_finance_manager' ||
+            status === 'approved_by_cfo' ||
+            status === 'denied_by_cfo' ||
+            status.includes('awaiting cfo') ||
+            status.includes('denied by cfo');
+    }
+    if (role === 'md') {
+        return status === 'approved_by_cfo' ||
+            status === 'approved_by_md' ||
+            status === 'denied_by_md' ||
+            status.includes('awaiting md') ||
+            status.includes('denied by md') ||
+            status === 'approved';
+    }
+    return true;
+}
+
+function applyRecordSort(records) {
+    const sorted = records.slice();
+    sorted.sort(function(a, b) {
+        if (currentSort === 'oldest') return getRecordTime(a) - getRecordTime(b);
+        if (isRoleSort(currentSort)) {
+            return getRecordTime(b) - getRecordTime(a);
+        }
+        return getRecordTime(b) - getRecordTime(a);
+    });
+    return sorted;
+}
+
 // Render records table
 function renderRecordsTable() {
     let records = getAllRecords();
@@ -469,6 +625,10 @@ function renderRecordsTable() {
             return true;
         });
     }
+
+    if (isRoleSort(currentSort)) {
+        records = records.filter(r => recordMatchesRoleFilter(r, currentSort));
+    }
     
     const tbody = document.getElementById('recordsTableBody');
     if (records.length === 0) {
@@ -477,7 +637,7 @@ function renderRecordsTable() {
         return;
     }
     
-    displayedRecords = records.slice().reverse();
+    displayedRecords = applyRecordSort(records);
     tbody.innerHTML = displayedRecords.map((r, i) => {
         // Status column value (type/category)
         let statusValue = '';
@@ -795,6 +955,21 @@ document.addEventListener('click', (e) => {
     if (dropdown && profileBtn && !profileBtn.contains(e.target)) {
         dropdown.style.display = 'none';
     }
+    const sortMenu = document.getElementById('sortMenu');
+    const sortButton = document.getElementById('sortButton');
+    if (sortMenu && sortButton && !sortMenu.contains(e.target) && !sortButton.contains(e.target)) {
+        sortMenu.style.display = 'none';
+    }
+});
+
+window.addEventListener('scroll', () => {
+    const sortMenu = document.getElementById('sortMenu');
+    if (sortMenu) sortMenu.style.display = 'none';
+}, true);
+
+window.addEventListener('resize', () => {
+    const sortMenu = document.getElementById('sortMenu');
+    if (sortMenu) sortMenu.style.display = 'none';
 });
 
 function handleLogout() {

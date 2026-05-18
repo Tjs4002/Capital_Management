@@ -1427,7 +1427,7 @@ async function approveAssetRequest(requestId) {
         document.getElementById('inlineApprovalRequestId').textContent = data.asset.ticketId || data.asset.requestId || '-';
         document.getElementById('inlineApprovalType').textContent = data.asset.itemName || data.asset.assetName || '-';
         document.getElementById('inlineApprovalRequester').textContent = data.asset.requestedBy || data.asset.requesterName || '-';
-        document.getElementById('inlineApprovalQty').textContent = Number(data.asset.amount || data.asset.assetValue || 0).toLocaleString();
+        document.getElementById('inlineApprovalQty').textContent = Number(data.asset.quantity || data.asset.qty || 0).toLocaleString('en-IN');
         document.getElementById('inlineApprovalAssetRemarks').textContent = data.asset.remarks || '-';
         document.getElementById('inlineApprovalAllocated').value = '';
         document.getElementById('inlineApprovalRemarks').value = '';
